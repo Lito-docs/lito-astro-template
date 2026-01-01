@@ -2,6 +2,7 @@
 import { getConfigFile } from '../utils/config';
 import { createLink } from '../utils/url';
 import ThemeToggle from './ThemeToggle.astro';
+import Icon from './Icon.astro';
 
 const config = await getConfigFile();
 const { navbar } = config.navigation;
@@ -10,34 +11,30 @@ const { navbar } = config.navigation;
 <header class="topbar">
   <div class="max-w-full mx-auto px-4 md:px-6 py-3 flex items-center justify-between">
     <!-- Mobile menu button -->
-    <button 
-      id="mobile-menu-btn" 
-      class="md:hidden p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded transition-colors"
+    <button
+      id="mobile-menu-btn"
+      class="mobile-menu-btn md:hidden"
       aria-label="Open menu"
     >
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="4" x2="20" y1="12" y2="12"></line>
-        <line x1="4" x2="20" y1="6" y2="6"></line>
-        <line x1="4" x2="20" y1="18" y2="18"></line>
-      </svg>
+      <Icon name="lucide:menu" size={20} />
     </button>
 
     <!-- Logo -->
     <div class="flex items-center gap-4">
-      <a href={createLink(config.branding.logo.href)} class="flex items-center gap-3 hover:opacity-80 transition-opacity">
-        <span class="text-2xl">📚</span>
-        <h1 class="text-lg font-bold text-foreground m-0 tracking-tight hidden sm:block">
+      <a href={createLink(config.branding.logo.href)} class="logo-link">
+        <Icon name="lucide:book-open" size={24} class="text-primary-500" />
+        <h1 class="logo-text hidden sm:block">
           {config.metadata.name}
         </h1>
       </a>
     </div>
 
     <!-- Desktop nav -->
-    <nav class="hidden md:flex items-center gap-6">
+    <nav class="hidden md:flex items-center gap-1">
       {navbar.links?.map((link) => (
-        <a 
-          href={createLink(link.href)} 
-          class="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+        <a
+          href={createLink(link.href)}
+          class="nav-link"
           target={link.href.startsWith('http') ? '_blank' : undefined}
           rel={link.href.startsWith('http') ? 'noopener noreferrer' : undefined}
         >
@@ -47,23 +44,29 @@ const { navbar } = config.navigation;
     </nav>
 
     <!-- Actions -->
-    <div class="flex items-center gap-2">
-      <!-- Search trigger -->
-      <button 
+    <div class="flex items-center gap-2 sm:gap-3">
+      <!-- Mobile search button -->
+      <button
+        onclick="window.openSearchModal && window.openSearchModal()"
+        class="mobile-search-btn sm:hidden"
+        aria-label="Search"
+      >
+        <Icon name="lucide:search" size={18} />
+      </button>
+
+      <!-- Desktop search trigger -->
+      <button
         id="search-trigger"
         onclick="window.openSearchModal && window.openSearchModal()"
-        class="hidden sm:flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground rounded border border-border hover:bg-accent hover:text-foreground transition-colors"
+        class="search-trigger hidden sm:flex"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="8"/>
-          <path d="m21 21-4.3-4.3"/>
-        </svg>
+        <Icon name="lucide:search" size={14} />
         <span>Search</span>
-        <kbd class="px-1.5 py-0.5 text-[10px] font-mono bg-muted border border-border rounded">⌘K</kbd>
+        <kbd class="search-kbd">⌘K</kbd>
       </button>
-      
+
       <ThemeToggle />
-      
+
       {navbar.cta && (
         <a href={createLink(navbar.cta.href)} class="cta-button hidden sm:inline-flex">
           {navbar.cta.label}
@@ -73,3 +76,94 @@ const { navbar } = config.navigation;
   </div>
 </header>
 
+<style>
+  @reference "../styles/global.css";
+
+  .mobile-menu-btn {
+    @apply p-2 text-muted-foreground rounded-lg;
+    @apply transition-all duration-150;
+  }
+
+  .mobile-menu-btn:hover {
+    @apply text-foreground bg-accent;
+  }
+
+  .logo-link {
+    @apply flex items-center gap-3;
+    @apply transition-all duration-200;
+  }
+
+  .logo-link:hover {
+    transform: translateY(-1px);
+    opacity: 0.85;
+  }
+
+  .logo-text {
+    @apply text-lg font-bold text-foreground m-0 tracking-tight;
+  }
+
+  .nav-link {
+    @apply text-sm font-medium text-muted-foreground;
+    @apply px-3 py-2 rounded-md;
+    @apply transition-all duration-150;
+    position: relative;
+  }
+
+  .nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 2px;
+    background: var(--primary-500);
+    border-radius: 1px;
+    transition: width 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .nav-link:hover {
+    @apply text-foreground;
+  }
+
+  .nav-link:hover::after {
+    width: 60%;
+  }
+
+  .search-trigger {
+    @apply items-center gap-2 px-3 py-2 text-sm text-muted-foreground;
+    @apply rounded-lg border border-border;
+    @apply transition-all duration-200;
+    background: var(--input);
+  }
+
+  .search-trigger:hover {
+    @apply border-primary-400 text-foreground;
+    background: var(--card);
+    box-shadow: 0 0 0 3px var(--primary-100);
+  }
+
+  .search-kbd {
+    @apply px-1.5 py-0.5 text-[10px] font-mono rounded;
+    background: var(--muted);
+    border: 1px solid var(--border);
+  }
+
+  .mobile-search-btn {
+    @apply p-2 rounded-lg;
+    @apply transition-all duration-150;
+    color: var(--muted-foreground);
+    background: var(--input);
+    border: 1px solid var(--border);
+  }
+
+  .mobile-search-btn:hover {
+    color: var(--foreground);
+    background: var(--card);
+    border-color: var(--primary-400);
+  }
+
+  .mobile-search-btn:active {
+    transform: scale(0.95);
+  }
+</style>
