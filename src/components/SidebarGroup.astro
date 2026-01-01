@@ -1,6 +1,7 @@
 ---
 import type { SidebarGroup } from '../types/config';
 import { createLink, isLinkActive } from '../utils/url';
+import Icon from './Icon.astro';
 
 interface Props {
   group: SidebarGroup;
@@ -20,28 +21,51 @@ const isActive = (item: any) => {
 
 // Check if any item in this group is active (for auto-expand)
 const hasActiveItem = group.items?.some((item) => isActive(item)) ?? false;
+
+// Default icons for common group names
+const defaultGroupIcons: Record<string, string> = {
+  'getting started': 'lucide:rocket',
+  'introduction': 'lucide:book-open',
+  'guides': 'lucide:compass',
+  'concepts': 'lucide:lightbulb',
+  'reference': 'lucide:file-code',
+  'api': 'lucide:code',
+  'components': 'lucide:puzzle',
+  'examples': 'lucide:folder-open',
+  'tutorials': 'lucide:graduation-cap',
+  'configuration': 'lucide:settings',
+  'deployment': 'lucide:cloud-upload',
+  'troubleshooting': 'lucide:bug',
+  'faq': 'lucide:help-circle',
+  'changelog': 'lucide:history',
+  'resources': 'lucide:library',
+};
+
+const groupIcon = group.icon || defaultGroupIcons[group.label.toLowerCase()] || 'lucide:folder';
 ---
 
 <div class="sidebar-group" data-group-id={groupId} data-has-active={hasActiveItem}>
-  <button class="sidebar-group-header w-full flex items-center justify-between cursor-pointer hover:text-foreground transition-colors" aria-expanded="true">
-    <h3 class="m-0 text-xs">{group.label}</h3>
-    <svg class="sidebar-chevron w-4 h-4 transition-transform duration-200" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="m6 9 6 6 6-6"/>
-    </svg>
+  <button class="sidebar-group-header" aria-expanded="true">
+    <div class="sidebar-group-title">
+      <Icon name={groupIcon} size={16} class="sidebar-group-icon" />
+      <h3>{group.label}</h3>
+    </div>
+    <Icon name="lucide:chevron-down" size={16} class="sidebar-chevron" />
   </button>
-  
-  <ul class="sidebar-group-items list-none m-0 p-0 space-y-1 overflow-hidden transition-all duration-200">
+
+  <ul class="sidebar-group-items">
     {group.items?.map((item) => {
         const itemHref = item.href || `/${item.slug}`;
         const fullHref = createLink(itemHref);
         const active = isActive(item);
         return (
         <li>
-            <a 
+            <a
             href={fullHref}
             class={active ? 'sidebar-link sidebar-link-active' : 'sidebar-link'}
             aria-current={active ? 'page' : undefined}
             >
+            {item.icon && <Icon name={item.icon} size={16} class="sidebar-item-icon" />}
             <span>{item.label}</span>
             </a>
         </li>
@@ -52,20 +76,73 @@ const hasActiveItem = group.items?.some((item) => isActive(item)) ?? false;
 
 <style>
   @reference "../styles/global.css";
+
+  .sidebar-group-header {
+    @apply w-full flex items-center justify-between cursor-pointer;
+    @apply py-2 px-3 rounded-md;
+    @apply transition-colors duration-150;
+    color: var(--muted-foreground);
+  }
+
+  .sidebar-group-header:hover {
+    color: var(--foreground);
+    background: var(--accent);
+  }
+
+  .sidebar-group-title {
+    @apply flex items-center gap-2;
+  }
+
+  .sidebar-group-title h3 {
+    @apply m-0 text-xs font-semibold uppercase tracking-wider;
+  }
+
+  .sidebar-group-icon {
+    opacity: 0.7;
+  }
+
+  .sidebar-group-header:hover .sidebar-group-icon {
+    opacity: 1;
+  }
+
+  .sidebar-chevron {
+    @apply transition-transform duration-200;
+    opacity: 0.5;
+  }
+
+  .sidebar-group-items {
+    @apply list-none m-0 p-0 space-y-0.5 overflow-hidden;
+    @apply transition-all duration-200;
+    margin-left: 0.5rem;
+    padding-left: 0.75rem;
+    border-left: 1px solid var(--border);
+  }
+
   .sidebar-group.collapsed .sidebar-group-items {
     max-height: 0;
     opacity: 0;
     margin-top: 0;
+    border-color: transparent;
   }
-  
+
   .sidebar-group:not(.collapsed) .sidebar-group-items {
     max-height: 500px;
     opacity: 1;
-    margin-top: 0.25rem;
+    margin-top: 0.5rem;
   }
-  
+
   .sidebar-group.collapsed .sidebar-chevron {
     transform: rotate(-90deg);
+  }
+
+  .sidebar-item-icon {
+    @apply flex-shrink-0;
+    opacity: 0.6;
+  }
+
+  .sidebar-link:hover .sidebar-item-icon,
+  .sidebar-link-active .sidebar-item-icon {
+    opacity: 1;
   }
 </style>
 
