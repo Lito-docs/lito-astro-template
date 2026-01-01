@@ -1,0 +1,57 @@
+---
+/**
+ * Icon Component - Wrapper for astro-icon
+ *
+ * Usage:
+ *   <Icon name="lucide:search" />
+ *   <Icon name="heroicons:home" size={24} />
+ *   <Icon name="mdi:github" class="text-primary-500" />
+ *   <Icon name="fa6-brands:twitter" />
+ *
+ * Available icon sets:
+ *   - lucide: Clean stroke icons (lucide:icon-name)
+ *   - heroicons: Tailwind's icons (heroicons:icon-name)
+ *   - mdi: Material Design Icons (mdi:icon-name)
+ *   - fa6-solid: Font Awesome solid (fa6-solid:icon-name)
+ *   - fa6-brands: Font Awesome brands (fa6-brands:icon-name)
+ *
+ * Browse icons at: https://icon-sets.iconify.design/
+ */
+import { Icon as AstroIcon } from 'astro-icon/components';
+
+interface Props {
+  name: string;
+  size?: number | string;
+  class?: string;
+  'aria-hidden'?: boolean;
+  [key: string]: any;
+}
+
+const {
+  name,
+  size = 24,
+  class: className = '',
+  'aria-hidden': ariaHidden = true,
+  ...rest
+} = Astro.props;
+
+// Convert size to number if string
+const sizeNum = typeof size === 'string' ? parseInt(size, 10) : size;
+---
+
+<AstroIcon
+  name={name}
+  width={sizeNum}
+  height={sizeNum}
+  class:list={['icon', className]}
+  aria-hidden={ariaHidden}
+  {...rest}
+/>
+
+<style>
+  .icon {
+    display: inline-block;
+    vertical-align: middle;
+    flex-shrink: 0;
+  }
+</style>
