@@ -60,28 +60,33 @@ const hasItemsProp = Array.isArray(items) && items.length > 0;
 <style is:global>
   @reference "../../styles/global.css";
   .tabs-container {
-    @apply my-6 rounded-lg border border-border bg-card overflow-hidden shadow-sm;
+    @apply my-6 rounded-lg border border-border bg-card overflow-hidden;
+    box-shadow: var(--shadow-sm);
   }
 
   .tabs-header {
-    @apply flex gap-1 p-2 border-b border-border bg-muted/50;
+    @apply flex gap-1 p-2 border-b border-border;
+    background: linear-gradient(to bottom, var(--muted), oklch(from var(--muted) l c h / 0.5));
   }
 
   .tab-button {
-    @apply px-4 py-2 text-sm font-medium text-muted-foreground;
+    @apply px-4 py-2.5 text-sm font-medium text-muted-foreground;
     @apply rounded-md;
-    @apply transition-all duration-200 ease-out;
+    @apply transition-all duration-150 ease-out;
     @apply cursor-pointer select-none;
+    position: relative;
   }
 
   /* Hover state */
   .tab-button:hover:not(.active) {
-    @apply text-foreground bg-muted;
+    @apply text-foreground bg-background;
+    transform: translateY(-1px);
   }
 
   /* Focus state */
   .tab-button:focus-visible {
-    @apply outline-none ring-2 ring-ring ring-offset-1 ring-offset-background;
+    @apply outline-none;
+    box-shadow: 0 0 0 2px var(--primary-100), 0 0 0 1px var(--primary-500);
   }
 
   /* Active/pressed state */
@@ -89,13 +94,29 @@ const hasItemsProp = Array.isArray(items) && items.length > 0;
     @apply bg-muted scale-[0.98];
   }
 
-  /* Selected state - pill style */
+  /* Selected state with bottom indicator */
   .tab-button.active {
-    @apply text-foreground bg-muted;
+    @apply text-primary-700 bg-background font-semibold;
+    box-shadow: var(--shadow-xs);
+  }
+
+  .tab-button.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--primary-500);
+    border-radius: 2px 2px 0 0;
+  }
+
+  :global(.dark) .tab-button.active {
+    @apply text-primary-500;
   }
 
   .tabs-content {
-    @apply p-4 bg-card;
+    @apply p-5 bg-card;
   }
 
   .tabs-content :global(p:first-child) {
