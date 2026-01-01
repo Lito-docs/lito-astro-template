@@ -4,24 +4,12 @@ import DocsHero from '../components/landing/DocsHero.astro';
 import DocsFeatureGrid from '../components/landing/DocsFeatureGrid.astro';
 import DocsFeature from '../components/landing/DocsFeature.astro';
 import Footer from '../components/Footer.astro';
+import MinimalistLanding from '../components/MinimalistLanding.astro';
 import { getConfigFile, getNavigation } from '../utils/config';
 import { createLink } from '../utils/url';
 
 const config = await getConfigFile();
 const shouldRenderLanding = config.landing?.enabled ?? false;
-
-// Logic to find a redirect URL if landing is disabled
-let redirectUrl = '/';
-if (!shouldRenderLanding) {
-  const nav = getNavigation();
-  // Try to find first sidebar link
-  if (nav?.sidebar && nav.sidebar.length > 0) {
-      const firstGroup = nav.sidebar[0];
-      if (firstGroup.items.length > 0) {
-          redirectUrl = createLink(`/${firstGroup.items[0].slug}`);
-      }
-  }
-}
 
 // Map config data to component props
 const heroConfig = config.landing?.hero;
@@ -54,17 +42,5 @@ const secondaryBtn = heroConfig?.cta?.find(c => c.variant === 'secondary');
         <Footer />
     </DocsLayout>
 ) : (
-    <html lang="en">
-        <head>
-            <meta charset="UTF-8" />
-            <meta http-equiv="refresh" content={`0;url=${redirectUrl}`} />
-            <script is:inline define:vars={{ redirectUrl }}>
-                window.location.href = redirectUrl;
-            </script>
-            <title>Redirecting...</title>
-        </head>
-        <body>
-            <p>Redirecting to <a href={redirectUrl}>{redirectUrl}</a>...</p>
-        </body>
-    </html>
+    <MinimalistLanding />
 )}
