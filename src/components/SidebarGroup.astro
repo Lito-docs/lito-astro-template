@@ -1,5 +1,5 @@
 ---
-import type { SidebarGroup } from '../types/config';
+import type { SidebarGroup, SidebarItem } from '../types/config';
 import { createLink, isLinkActive } from '../utils/url';
 import Icon from './Icon.astro';
 
@@ -13,7 +13,10 @@ const { group, currentPath } = Astro.props;
 // Generate a unique ID for this group (for localStorage key)
 const groupId = group.label.toLowerCase().replace(/\s+/g, '-');
 
-const isActive = (item: any) => {
+const isActive = (item: SidebarItem): boolean => {
+  if (item.items) {
+    return item.items.some((subItem) => isActive(subItem));
+  }
   const itemPath = item.href || `/${item.slug}`;
   const fullItemPath = createLink(itemPath);
   return isLinkActive(fullItemPath, currentPath);
@@ -30,6 +33,7 @@ const defaultGroupIcons: Record<string, string> = {
   'concepts': 'lucide:lightbulb',
   'reference': 'lucide:file-code',
   'api': 'lucide:code',
+  'api reference': 'lucide:braces',
   'components': 'lucide:puzzle',
   'examples': 'lucide:folder-open',
   'tutorials': 'lucide:graduation-cap',
@@ -42,6 +46,15 @@ const defaultGroupIcons: Record<string, string> = {
 };
 
 const groupIcon = group.icon || defaultGroupIcons[group.label.toLowerCase()] || 'lucide:folder';
+
+// Method badge colors
+const methodColors: Record<string, string> = {
+  'GET': 'method-get',
+  'POST': 'method-post',
+  'PUT': 'method-put',
+  'PATCH': 'method-patch',
+  'DELETE': 'method-delete',
+};
 ---
 
 <div class="sidebar-group" data-group-id={groupId} data-has-active={hasActiveItem}>
@@ -55,21 +68,65 @@ const groupIcon = group.icon || defaultGroupIcons[group.label.toLowerCase()] || 
 
   <ul class="sidebar-group-items">
     {group.items?.map((item) => {
-        const itemHref = item.href || `/${item.slug}`;
-        const fullHref = createLink(itemHref);
-        const active = isActive(item);
+      // Check if this is a nested group (has items array)
+      if (item.items && item.items.length > 0) {
+        const subGroupId = `${groupId}-${item.label.toLowerCase().replace(/\s+/g, '-')}`;
+        const hasActiveSubItem = item.items.some((subItem) => isActive(subItem));
         return (
+          <li class="sidebar-subgroup" data-subgroup-id={subGroupId} data-has-active={hasActiveSubItem}>
+            <button class="sidebar-subgroup-header" aria-expanded="true">
+              <span class="subgroup-label">{item.label}</span>
+              <Icon name="lucide:chevron-right" size={14} class="subgroup-chevron" />
+            </button>
+            <ul class="sidebar-subgroup-items">
+              {item.items.map((subItem) => {
+                const subItemHref = subItem.href || `/${subItem.slug}`;
+                const fullSubHref = createLink(subItemHref);
+                const subActive = isActive(subItem);
+                return (
+                  <li>
+                    <a
+                      href={fullSubHref}
+                      class={subActive ? 'sidebar-link sidebar-link-active' : 'sidebar-link'}
+                      aria-current={subActive ? 'page' : undefined}
+                    >
+                      {subItem.method && (
+                        <span class={`method-badge ${methodColors[subItem.method]}`}>
+                          {subItem.method}
+                        </span>
+                      )}
+                      {subItem.icon && <Icon name={subItem.icon} size={16} class="sidebar-item-icon" />}
+                      <span>{subItem.label}</span>
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          </li>
+        );
+      }
+
+      // Regular item (no nested items)
+      const itemHref = item.href || `/${item.slug}`;
+      const fullHref = createLink(itemHref);
+      const active = isActive(item);
+      return (
         <li>
-            <a
+          <a
             href={fullHref}
             class={active ? 'sidebar-link sidebar-link-active' : 'sidebar-link'}
             aria-current={active ? 'page' : undefined}
-            >
+          >
+            {item.method && (
+              <span class={`method-badge ${methodColors[item.method]}`}>
+                {item.method}
+              </span>
+            )}
             {item.icon && <Icon name={item.icon} size={16} class="sidebar-item-icon" />}
             <span>{item.label}</span>
-            </a>
+          </a>
         </li>
-        );
+      );
     })}
   </ul>
 </div>
@@ -126,13 +183,109 @@ const groupIcon = group.icon || defaultGroupIcons[group.label.toLowerCase()] || 
   }
 
   .sidebar-group:not(.collapsed) .sidebar-group-items {
-    max-height: 500px;
+    max-height: 2000px;
     opacity: 1;
     margin-top: 0.5rem;
   }
 
   .sidebar-group.collapsed .sidebar-chevron {
     transform: rotate(-90deg);
+  }
+
+  /* Nested subgroups */
+  .sidebar-subgroup {
+    @apply mt-1;
+  }
+
+  .sidebar-subgroup-header {
+    @apply w-full flex items-center justify-between cursor-pointer;
+    @apply py-1.5 px-2 rounded-md text-sm;
+    @apply transition-colors duration-150;
+    color: var(--muted-foreground);
+  }
+
+  .sidebar-subgroup-header:hover {
+    color: var(--foreground);
+    background: var(--accent);
+  }
+
+  .subgroup-label {
+    @apply font-medium text-xs uppercase tracking-wide;
+  }
+
+  .subgroup-chevron {
+    @apply transition-transform duration-200;
+    opacity: 0.5;
+  }
+
+  .sidebar-subgroup:not(.collapsed) .subgroup-chevron {
+    transform: rotate(90deg);
+  }
+
+  .sidebar-subgroup-items {
+    @apply list-none m-0 p-0 space-y-0.5 overflow-hidden;
+    @apply transition-all duration-200;
+    margin-left: 0.5rem;
+    padding-left: 0.5rem;
+    border-left: 1px solid var(--border);
+  }
+
+  .sidebar-subgroup.collapsed .sidebar-subgroup-items {
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0;
+  }
+
+  .sidebar-subgroup:not(.collapsed) .sidebar-subgroup-items {
+    max-height: 1000px;
+    opacity: 1;
+    margin-top: 0.25rem;
+  }
+
+  /* Method badges */
+  .method-badge {
+    @apply px-1.5 py-0.5 text-[10px] font-bold uppercase rounded;
+    @apply shrink-0 mr-1.5;
+  }
+
+  .method-get {
+    @apply bg-emerald-500/15 text-emerald-600;
+  }
+
+  :global(.dark) .method-get {
+    @apply text-emerald-400;
+  }
+
+  .method-post {
+    @apply bg-blue-500/15 text-blue-600;
+  }
+
+  :global(.dark) .method-post {
+    @apply text-blue-400;
+  }
+
+  .method-put {
+    @apply bg-amber-500/15 text-amber-600;
+  }
+
+  :global(.dark) .method-put {
+    @apply text-amber-400;
+  }
+
+  .method-patch {
+    @apply bg-orange-500/15 text-orange-600;
+  }
+
+  :global(.dark) .method-patch {
+    @apply text-orange-400;
+  }
+
+  .method-delete {
+    @apply bg-red-500/15 text-red-600;
+  }
+
+  :global(.dark) .method-delete {
+    @apply text-red-400;
   }
 
   .sidebar-item-icon {
@@ -144,22 +297,28 @@ const groupIcon = group.icon || defaultGroupIcons[group.label.toLowerCase()] || 
   .sidebar-link-active .sidebar-item-icon {
     opacity: 1;
   }
+
+  /* Make links with method badges align nicely */
+  .sidebar-link {
+    @apply flex items-center;
+  }
 </style>
 
 <script>
   // Initialize collapsible sidebar groups
   function initSidebarGroups() {
+    // Main groups
     document.querySelectorAll('.sidebar-group').forEach((el) => {
       const group = el as HTMLElement;
       const groupId = group.dataset.groupId;
       const hasActive = group.dataset.hasActive === 'true';
       const storageKey = `sidebar-${groupId}`;
       const header = group.querySelector('.sidebar-group-header') as HTMLButtonElement;
-      
+
       // Check localStorage for saved state, default to expanded if has active item
       const savedState = localStorage.getItem(storageKey);
       const isCollapsed = savedState ? savedState === 'collapsed' : false;
-      
+
       // If there's an active item, always expand
       if (hasActive) {
         group.classList.remove('collapsed');
@@ -168,7 +327,7 @@ const groupIcon = group.icon || defaultGroupIcons[group.label.toLowerCase()] || 
         group.classList.add('collapsed');
         header?.setAttribute('aria-expanded', 'false');
       }
-      
+
       // Toggle on click
       header?.addEventListener('click', () => {
         const isNowCollapsed = group.classList.toggle('collapsed');
@@ -176,8 +335,38 @@ const groupIcon = group.icon || defaultGroupIcons[group.label.toLowerCase()] || 
         localStorage.setItem(storageKey, isNowCollapsed ? 'collapsed' : 'expanded');
       });
     });
+
+    // Nested subgroups
+    document.querySelectorAll('.sidebar-subgroup').forEach((el) => {
+      const subgroup = el as HTMLElement;
+      const subgroupId = subgroup.dataset.subgroupId;
+      const hasActive = subgroup.dataset.hasActive === 'true';
+      const storageKey = `sidebar-sub-${subgroupId}`;
+      const header = subgroup.querySelector('.sidebar-subgroup-header') as HTMLButtonElement;
+
+      // Check localStorage for saved state
+      const savedState = localStorage.getItem(storageKey);
+      const isCollapsed = savedState ? savedState === 'collapsed' : !hasActive;
+
+      // If there's an active item, always expand
+      if (hasActive) {
+        subgroup.classList.remove('collapsed');
+        header?.setAttribute('aria-expanded', 'true');
+      } else if (isCollapsed) {
+        subgroup.classList.add('collapsed');
+        header?.setAttribute('aria-expanded', 'false');
+      }
+
+      // Toggle on click
+      header?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isNowCollapsed = subgroup.classList.toggle('collapsed');
+        header.setAttribute('aria-expanded', String(!isNowCollapsed));
+        localStorage.setItem(storageKey, isNowCollapsed ? 'collapsed' : 'expanded');
+      });
+    });
   }
-  
+
   // Run on page load and after View Transitions
   initSidebarGroups();
   document.addEventListener('astro:page-load', initSidebarGroups);
