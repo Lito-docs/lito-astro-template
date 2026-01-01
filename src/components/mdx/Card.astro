@@ -1,5 +1,6 @@
 ---
 import { createLink } from '../../utils/url';
+import Icon from '../Icon.astro';
 
 interface Props {
   title?: string;
@@ -11,24 +12,96 @@ const { title, href, icon } = Astro.props;
 
 const Tag = href ? 'a' : 'div';
 const link = href ? createLink(href) : undefined;
+
+// Check if icon is an Iconify name (contains :) or an emoji
+const isIconifyIcon = icon?.includes(':');
 ---
 
-<Tag 
+<Tag
   href={link}
-  class={`
-    block not-prose p-6 rounded border border-border bg-card 
-    transition-all duration-300 hover:border-ring hover:shadow-lg
-    ${href ? 'cursor-pointer' : ''} my-6
-  `}
+  class:list={["card-component", "group", { "cursor-pointer": href }]}
 >
- 
   {icon && (
-    <div class="mb-4 w-10 h-10 rounded bg-muted flex items-center justify-center text-foreground border border-border text-xl">
-      {icon}
+    <div class="card-icon">
+      {isIconifyIcon ? <Icon name={icon} size={24} /> : icon}
     </div>
   )}
-  {title && <h3 class="text-lg font-semibold text-card-foreground mb-2">{title}</h3>}
-  <div class="text-muted-foreground text-sm leading-relaxed">
+  {title && <h3 class="card-title">{title}</h3>}
+  <div class="card-body">
     <slot />
   </div>
+  {href && (
+    <div class="card-arrow">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+      </svg>
+    </div>
+  )}
 </Tag>
+
+<style>
+  @reference "../../styles/global.css";
+
+  .card-component {
+    @apply block not-prose p-6 rounded-lg border border-border bg-card my-6;
+    @apply transition-all duration-200 ease-out;
+    box-shadow: var(--shadow-xs);
+    position: relative;
+  }
+
+  .card-component:hover {
+    @apply border-primary-300;
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  :global(.dark) .card-component:hover {
+    @apply border-primary-400;
+  }
+
+  .card-icon {
+    @apply mb-4 w-12 h-12 rounded-lg flex items-center justify-center text-2xl;
+    @apply border border-primary-200 text-primary-600;
+    @apply transition-all duration-200;
+    background: linear-gradient(135deg, var(--primary-50), var(--primary-100));
+    box-shadow: var(--shadow-xs);
+  }
+
+  .card-component:hover .card-icon {
+    box-shadow: var(--shadow-sm);
+    transform: scale(1.05);
+  }
+
+  :global(.dark) .card-icon {
+    @apply border-primary-300 text-primary-500;
+    background: linear-gradient(135deg, var(--primary-100), var(--primary-200));
+  }
+
+  .card-title {
+    @apply text-lg font-semibold text-card-foreground mb-2;
+    @apply transition-colors duration-150;
+  }
+
+  .card-component:hover .card-title {
+    @apply text-primary-600;
+  }
+
+  :global(.dark) .card-component:hover .card-title {
+    @apply text-primary-500;
+  }
+
+  .card-body {
+    @apply text-muted-foreground text-sm leading-relaxed;
+  }
+
+  .card-arrow {
+    @apply absolute right-4 top-1/2 -translate-y-1/2;
+    @apply text-muted-foreground opacity-0;
+    @apply transition-all duration-200;
+  }
+
+  .card-component:hover .card-arrow {
+    @apply opacity-100 text-primary-500;
+    transform: translateY(-50%) translateX(4px);
+  }
+</style>
