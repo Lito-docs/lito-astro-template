@@ -1,144 +1,205 @@
 ---
 /**
  * APIEndpoint - Display an API endpoint with method, path, and details
- * Usage: <APIEndpoint method="GET" path="/users/{id}" description="Get a user by ID" />
+ * Redesigned with modern styling inspired by Mintlify/Stripe
+ *
+ * Usage:
+ * <APIEndpoint method="GET" path="/users/{id}" description="Get a user by ID" />
+ * <APIEndpoint method="POST" path="/users" auth="bearer" deprecated />
  */
+import Icon from '../Icon.astro';
+
 interface Props {
   method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS" | "HEAD";
   path: string;
   description?: string;
   deprecated?: boolean;
+  auth?: "bearer" | "api-key" | "basic" | "none";
+  baseUrl?: string;
 }
 
-const { method, path, description, deprecated = false } = Astro.props;
+const { method, path, description, deprecated = false, auth, baseUrl } = Astro.props;
 
-const methodColors: Record<
-  string,
-  { bg: string; text: string; border: string }
-> = {
-  GET: {
-    bg: "bg-emerald-500/10",
-    text: "text-emerald-500",
-    border: "border-emerald-500/30",
-  },
-  POST: {
-    bg: "bg-blue-500/10",
-    text: "text-blue-500",
-    border: "border-blue-500/30",
-  },
-  PUT: {
-    bg: "bg-amber-500/10",
-    text: "text-amber-500",
-    border: "border-amber-500/30",
-  },
-  PATCH: {
-    bg: "bg-orange-500/10",
-    text: "text-orange-500",
-    border: "border-orange-500/30",
-  },
-  DELETE: {
-    bg: "bg-red-500/10",
-    text: "text-red-500",
-    border: "border-red-500/30",
-  },
-  OPTIONS: {
-    bg: "bg-purple-500/10",
-    text: "text-purple-500",
-    border: "border-purple-500/30",
-  },
-  HEAD: {
-    bg: "bg-gray-500/10",
-    text: "text-gray-500",
-    border: "border-gray-500/30",
-  },
+const methodConfig: Record<string, { bg: string; text: string; icon: string }> = {
+  GET: { bg: "bg-emerald-500/15", text: "text-emerald-600 dark:text-emerald-400", icon: "lucide:download" },
+  POST: { bg: "bg-blue-500/15", text: "text-blue-600 dark:text-blue-400", icon: "lucide:plus" },
+  PUT: { bg: "bg-amber-500/15", text: "text-amber-600 dark:text-amber-400", icon: "lucide:pencil" },
+  PATCH: { bg: "bg-orange-500/15", text: "text-orange-600 dark:text-orange-400", icon: "lucide:wrench" },
+  DELETE: { bg: "bg-red-500/15", text: "text-red-600 dark:text-red-400", icon: "lucide:trash-2" },
+  OPTIONS: { bg: "bg-purple-500/15", text: "text-purple-600 dark:text-purple-400", icon: "lucide:settings" },
+  HEAD: { bg: "bg-gray-500/15", text: "text-gray-600 dark:text-gray-400", icon: "lucide:eye" },
 };
 
-const colors = methodColors[method] || methodColors.GET;
+const config = methodConfig[method] || methodConfig.GET;
+const endpointId = `endpoint-${Math.random().toString(36).slice(2, 9)}`;
+
+// Format path with highlighted parameters
+const formattedPath = path.replace(/\{([^}]+)\}/g, '<span class="path-param">{$1}</span>');
 ---
 
-<div class={`api-endpoint group ${deprecated ? "opacity-60" : ""}`}>
-  <div class="api-endpoint-header">
-    <div class="flex items-center gap-3 flex-1 min-w-0">
-      <span class={`api-method ${colors.bg} ${colors.text} ${colors.border}`}>
+<div
+  class:list={["api-endpoint not-prose group", { "deprecated": deprecated }]}
+  id={endpointId}
+  data-path={path}
+  data-base-url={baseUrl}
+>
+  <div class="endpoint-header">
+    <div class="endpoint-method-path">
+      <span class:list={["method-badge", config.bg, config.text]}>
         {method}
       </span>
-      <code class="api-path">{path}</code>
+      <code class="endpoint-path" set:html={formattedPath} />
     </div>
-    <div class="flex items-center gap-2">
-      {
-        deprecated && (
-          <span class="api-deprecated">
-            <svg
-              class="w-3 h-3 mr-1"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-              />
-            </svg>
-            Deprecated
-          </span>
-        )
-      }
-      <button class="copy-button" aria-label="Copy endpoint">
-        <svg
-          class="w-4 h-4"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-          ></path>
-        </svg>
-        <span class="copy-feedback">Copied!</span>
+
+    <div class="endpoint-actions">
+      {auth && auth !== "none" && (
+        <span class="auth-badge">
+          <Icon name="lucide:lock" size={12} />
+          {auth === "bearer" ? "Bearer" : auth === "api-key" ? "API Key" : "Basic"}
+        </span>
+      )}
+      {deprecated && (
+        <span class="deprecated-badge">
+          <Icon name="lucide:alert-triangle" size={12} />
+          Deprecated
+        </span>
+      )}
+      <button class="copy-btn" aria-label="Copy endpoint" data-path={path}>
+        <Icon name="lucide:copy" size={14} class="copy-icon" />
+        <Icon name="lucide:check" size={14} class="check-icon" />
       </button>
     </div>
   </div>
 
-  {description && <p class="api-description">{description}</p>}
+  {description && (
+    <p class="endpoint-description">{description}</p>
+  )}
 
-  <div class="api-content">
+  <div class="endpoint-content">
     <slot />
   </div>
 </div>
 
 <style>
   @reference "../../styles/global.css";
+
   .api-endpoint {
-    @apply my-6 rounded border border-border bg-card overflow-hidden;
-    max-width: 100%;
+    @apply my-6 rounded-xl border border-border bg-card overflow-hidden;
+    box-shadow: var(--shadow-sm);
+    transition: all 200ms ease;
   }
 
-  .api-endpoint-header {
-    @apply flex items-center gap-3 px-4 py-3 bg-muted/50 border-b border-border flex-wrap;
+  .api-endpoint:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary-200);
   }
 
-  .api-method {
-    @apply px-3 py-1 text-xs font-bold uppercase rounded border;
+  :global(.dark) .api-endpoint:hover {
+    border-color: var(--primary-400);
   }
 
-  .api-path {
-    @apply text-sm font-mono text-foreground bg-transparent;
+  .api-endpoint.deprecated {
+    opacity: 0.7;
   }
 
-  .api-deprecated {
-    @apply ml-auto px-2 py-0.5 text-xs font-medium text-amber-500 bg-amber-500/10 rounded;
+  .api-endpoint.deprecated:hover {
+    opacity: 0.85;
   }
 
-  .api-description {
-    @apply px-4 py-3 text-sm text-muted-foreground m-0 border-b border-border;
+  .endpoint-header {
+    @apply flex items-center justify-between gap-4 px-5 py-4;
+    @apply border-b border-border;
+    background: linear-gradient(to right, var(--muted), transparent);
   }
 
-  .api-content {
-    @apply p-4;
+  .endpoint-method-path {
+    @apply flex items-center gap-3 min-w-0 flex-1;
+  }
+
+  .method-badge {
+    @apply px-3 py-1.5 text-xs font-bold uppercase rounded-md;
+    @apply flex-shrink-0 tracking-wide;
+    letter-spacing: 0.05em;
+  }
+
+  .endpoint-path {
+    @apply text-sm font-mono text-foreground truncate;
+    @apply bg-transparent border-0 p-0;
+  }
+
+  .endpoint-path :global(.path-param) {
+    @apply text-primary-600 font-semibold;
+  }
+
+  :global(.dark) .endpoint-path :global(.path-param) {
+    @apply text-primary-400;
+  }
+
+  .endpoint-actions {
+    @apply flex items-center gap-2 flex-shrink-0;
+  }
+
+  .auth-badge {
+    @apply inline-flex items-center gap-1 px-2 py-1 text-xs font-medium;
+    @apply text-muted-foreground bg-muted rounded-md;
+  }
+
+  .deprecated-badge {
+    @apply inline-flex items-center gap-1 px-2 py-1 text-xs font-medium;
+    @apply text-amber-600 bg-amber-500/10 rounded-md;
+  }
+
+  :global(.dark) .deprecated-badge {
+    @apply text-amber-400;
+  }
+
+  .copy-btn {
+    @apply p-2 rounded-lg text-muted-foreground;
+    @apply hover:text-foreground hover:bg-muted;
+    @apply transition-all duration-150;
+    @apply relative;
+  }
+
+  .copy-btn .check-icon {
+    @apply hidden text-success;
+  }
+
+  .copy-btn.copied .copy-icon {
+    @apply hidden;
+  }
+
+  .copy-btn.copied .check-icon {
+    @apply block;
+  }
+
+  .endpoint-description {
+    @apply px-5 py-3 text-sm text-muted-foreground m-0;
+    @apply border-b border-border bg-muted/30;
+  }
+
+  .endpoint-content {
+    @apply p-5;
+  }
+
+  .endpoint-content:empty {
+    @apply hidden;
   }
 </style>
+
+<script>
+  function initEndpoints() {
+    document.querySelectorAll('.api-endpoint .copy-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const path = (btn as HTMLElement).dataset.path;
+        if (path) {
+          await navigator.clipboard.writeText(path);
+          btn.classList.add('copied');
+          setTimeout(() => btn.classList.remove('copied'), 2000);
+        }
+      });
+    });
+  }
+
+  initEndpoints();
+  document.addEventListener('astro:page-load', initEndpoints);
+</script>
