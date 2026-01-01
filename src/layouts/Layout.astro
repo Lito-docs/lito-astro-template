@@ -3,18 +3,23 @@ import Header from '../components/Header.astro';
 import Sidebar from '../components/Sidebar.astro';
 import MobileNav from '../components/MobileNav.astro';
 import SearchModal from '../components/SearchModal.astro';
+import SEOHead from '../components/SEOHead.astro';
 import { getConfigFile } from '../utils/config';
 import { createLink } from '../utils/url';
+import type { SEOFrontmatter } from '../types/seo';
 import '../styles/global.css';
 
 interface Props {
   title: string;
   description?: string;
   showSidebar?: boolean;
+  frontmatter?: SEOFrontmatter;
+  breadcrumbs?: Array<{ name: string; href?: string }>;
 }
 
-const { title, description, showSidebar = true } = Astro.props;
+const { title, description, showSidebar = true, frontmatter, breadcrumbs } = Astro.props;
 const config = await getConfigFile();
+const currentPath = Astro.url.pathname;
 ---
 
 <!doctype html>
@@ -22,19 +27,22 @@ const config = await getConfigFile();
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{title} | {config.metadata.name}</title>
-    <meta name="description" content={description || config.metadata.description} />
-    <meta property="og:image" content={config.seo.ogImage} />
-    <meta property="og:title" content={`${title} | ${config.metadata.name}`} />
-    <meta property="og:description" content={description || config.metadata.description} />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:creator" content={config.seo.twitterHandle} />
+
+    <SEOHead
+      title={title}
+      description={description}
+      frontmatter={frontmatter}
+      config={config}
+      currentPath={currentPath}
+      breadcrumbs={breadcrumbs}
+    />
+
     <link rel="icon" href={createLink(config.branding.favicon)} />
-    
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet" />
-    
+
     <meta name="generator" content={Astro.generator} />
     
     <!-- Theme initialization -->

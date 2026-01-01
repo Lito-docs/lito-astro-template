@@ -4,22 +4,63 @@ import Footer from '../components/Footer.astro';
 import TableOfContents from '../components/TableOfContents.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
 import PrevNextNav from '../components/PrevNextNav.astro';
+import type { SEOFrontmatter } from '../types/seo';
+import { getConfigFile } from '../utils/config';
 
 interface Props {
   title: string;
   description?: string;
-  frontmatter?: {
+  frontmatter?: SEOFrontmatter & {
     title?: string;
     description?: string;
   };
 }
 
 const { frontmatter } = Astro.props;
-const title = Astro.props.title || frontmatter?.title;
+const title = Astro.props.title || frontmatter?.title || '';
 const description = Astro.props.description || frontmatter?.description;
+
+// Build breadcrumbs for SEO JSON-LD
+const config = await getConfigFile();
+const { pathname } = Astro.url;
+const currentSlug = pathname.replace(/^\/|\/$/g, '');
+
+const breadcrumbs: Array<{ name: string; href?: string }> = [
+  { name: 'Docs', href: '/' }
+];
+
+// Find current page in sidebar config
+let found = false;
+for (const group of config.navigation.sidebar) {
+  if (found) break;
+  if (group.items) {
+    for (const item of group.items) {
+      const itemPath = item.href || item.slug || '';
+      const itemSlug = itemPath.replace(/^\/|\/$/g, '');
+      if (itemSlug === currentSlug) {
+        breadcrumbs.push({ name: group.label });
+        breadcrumbs.push({ name: item.label, href: itemPath });
+        found = true;
+        break;
+      }
+    }
+  }
+}
+
+// Fallback for unlisted pages
+if (!found && currentSlug) {
+  const segments = currentSlug.split('/');
+  segments.forEach((segment, index) => {
+    const isLast = index === segments.length - 1;
+    breadcrumbs.push({
+      name: segment.charAt(0).toUpperCase() + segment.slice(1),
+      href: isLast ? undefined : `/${segments.slice(0, index + 1).join('/')}`,
+    });
+  });
+}
 ---
 
-<Layout title={title} description={description}>
+<Layout title={title} description={description} frontmatter={frontmatter} breadcrumbs={breadcrumbs}>
   <main class="main-content pt-16">
     <article class="docs-prose">
       <Breadcrumbs />

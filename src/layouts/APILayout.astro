@@ -1,6 +1,6 @@
 ---
 import Layout from './Layout.astro';
-import APIPlayground from '../components/APIPlayground.astro';
+import APIPlayground from '../components/mdx/APIPlayground.astro';
 import '../styles/global.css';
 
 interface Props {
@@ -17,13 +17,15 @@ const { frontmatter } = Astro.props;
 const title = Astro.props.title || frontmatter?.title;
 const description = Astro.props.description || frontmatter?.description;
 
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+
 // Parse API string "GET /path"
-let method = 'GET';
+let method: HttpMethod = 'GET';
 let path = '/';
 if (frontmatter?.api) {
   const parts = frontmatter.api.split(' ');
   if (parts.length >= 2) {
-    method = parts[0];
+    method = parts[0].toUpperCase() as HttpMethod;
     path = parts[1];
   } else {
     path = parts[0];

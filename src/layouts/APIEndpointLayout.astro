@@ -1,0 +1,242 @@
+---
+/**
+ * APIEndpointLayout - Two-column layout for individual API endpoint pages
+ *
+ * Left side: Schema documentation (parameters, request body, responses)
+ * Right side: Interactive API playground (sticky)
+ *
+ * Usage:
+ * ---
+ * layout: '@/layouts/APIEndpointLayout.astro'
+ * title: Get User
+ * api: GET /users/{id}
+ * baseUrl: https://api.example.com
+ * ---
+ */
+import Layout from './Layout.astro';
+import APIPlayground from '../components/mdx/APIPlayground.astro';
+import APIEndpoint from '../components/mdx/APIEndpoint.astro';
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+  frontmatter?: {
+    api?: string;
+    title?: string;
+    description?: string;
+    baseUrl?: string;
+    auth?: 'bearer' | 'api-key' | 'basic' | 'none';
+    deprecated?: boolean;
+  };
+}
+
+const { frontmatter } = Astro.props;
+const title = Astro.props.title || frontmatter?.title || 'API Endpoint';
+const description = Astro.props.description || frontmatter?.description;
+const baseUrl = frontmatter?.baseUrl || '';
+const auth = frontmatter?.auth || 'none';
+const deprecated = frontmatter?.deprecated || false;
+
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+
+// Parse API string "GET /path"
+let method: HttpMethod = 'GET';
+let path = '/';
+if (frontmatter?.api) {
+  const parts = frontmatter.api.trim().split(/\s+/);
+  if (parts.length >= 2) {
+    method = parts[0].toUpperCase() as HttpMethod;
+    path = parts.slice(1).join(' ');
+  } else {
+    path = parts[0];
+  }
+}
+---
+
+<Layout title={title} description={description}>
+  <main class="api-endpoint-main">
+    <div class="api-endpoint-container">
+      <!-- Left Column: Documentation -->
+      <div class="api-docs-column">
+        <div class="api-docs-content">
+          <!-- Endpoint Header -->
+          <div class="endpoint-header">
+            <h1 class="endpoint-title">{title}</h1>
+            {deprecated && (
+              <span class="deprecated-badge">Deprecated</span>
+            )}
+          </div>
+
+          {description && (
+            <p class="endpoint-description">{description}</p>
+          )}
+
+          <!-- Method + Path Display -->
+          <div class="endpoint-path-display">
+            <span class={`method-badge method-${method.toLowerCase()}`}>
+              {method}
+            </span>
+            <code class="endpoint-path">{path}</code>
+          </div>
+
+          <!-- Documentation Content (slot) -->
+          <div class="api-documentation prose prose-slate dark:prose-invert max-w-none">
+            <slot />
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Playground (Sticky) -->
+      <div class="api-playground-column">
+        <div class="playground-sticky-wrapper">
+          <div class="playground-header">
+            <span class="playground-title">Try it out</span>
+          </div>
+          <APIPlayground
+            method={method}
+            path={path}
+            baseUrl={baseUrl}
+            auth={auth}
+          />
+        </div>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  @reference '../styles/global.css';
+
+  .api-endpoint-main {
+    @apply min-h-screen flex flex-col flex-1 pt-16;
+    margin-left: 0;
+  }
+
+  @media (min-width: 768px) {
+    .api-endpoint-main {
+      margin-left: 18rem; /* Match global sidebar width */
+    }
+  }
+
+  .api-endpoint-container {
+    @apply flex flex-col xl:flex-row w-full min-h-[calc(100vh-4rem)];
+  }
+
+  /* Left Column - Documentation */
+  .api-docs-column {
+    @apply flex-1 min-w-0 overflow-y-auto;
+    @apply border-r border-border;
+  }
+
+  .api-docs-content {
+    @apply p-6 lg:p-8 xl:p-10 max-w-3xl;
+  }
+
+  .endpoint-header {
+    @apply flex items-center gap-3 mb-4;
+  }
+
+  .endpoint-title {
+    @apply text-2xl lg:text-3xl font-bold text-foreground m-0;
+  }
+
+  .deprecated-badge {
+    @apply px-2 py-1 text-xs font-semibold uppercase;
+    @apply bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-md;
+  }
+
+  .endpoint-description {
+    @apply text-base lg:text-lg text-muted-foreground mb-6 leading-relaxed;
+  }
+
+  .endpoint-path-display {
+    @apply flex items-center gap-3 p-4 rounded-lg mb-8;
+    @apply bg-muted/50 border border-border;
+  }
+
+  .method-badge {
+    @apply px-3 py-1.5 text-sm font-bold uppercase rounded-md;
+    @apply shrink-0;
+  }
+
+  .method-get {
+    @apply bg-emerald-500/15 text-emerald-600 dark:text-emerald-400;
+  }
+
+  .method-post {
+    @apply bg-blue-500/15 text-blue-600 dark:text-blue-400;
+  }
+
+  .method-put {
+    @apply bg-amber-500/15 text-amber-600 dark:text-amber-400;
+  }
+
+  .method-patch {
+    @apply bg-orange-500/15 text-orange-600 dark:text-orange-400;
+  }
+
+  .method-delete {
+    @apply bg-red-500/15 text-red-600 dark:text-red-400;
+  }
+
+  .endpoint-path {
+    @apply text-sm lg:text-base font-mono text-foreground break-all;
+  }
+
+  .api-documentation {
+    @apply space-y-6;
+  }
+
+  /* Right Column - Playground */
+  .api-playground-column {
+    @apply w-full xl:w-[480px] 2xl:w-[520px] shrink-0;
+    @apply bg-muted/30 border-t xl:border-t-0 xl:border-l border-border;
+  }
+
+  .playground-sticky-wrapper {
+    @apply p-4 lg:p-6;
+    @apply xl:sticky xl:top-20 xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto;
+  }
+
+  .playground-header {
+    @apply mb-4 pb-3 border-b border-border;
+  }
+
+  .playground-title {
+    @apply text-sm font-semibold uppercase tracking-wider text-muted-foreground;
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 1279px) {
+    .api-docs-column {
+      @apply border-r-0;
+    }
+
+    .api-playground-column {
+      max-height: none;
+    }
+
+    .playground-sticky-wrapper {
+      position: static;
+      max-height: none;
+    }
+  }
+
+  /* Custom scrollbar for playground */
+  .playground-sticky-wrapper::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .playground-sticky-wrapper::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  .playground-sticky-wrapper::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full;
+  }
+
+  .playground-sticky-wrapper::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/50;
+  }
+</style>

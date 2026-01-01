@@ -82,6 +82,10 @@ export function getDefaultConfig(): DocsConfig {
         seo: {
             ogImage: '/og-image.png',
             twitterHandle: '@example',
+            enableJsonLd: true,
+            articleType: 'TechArticle',
+            autoCanonical: true,
+            enableBreadcrumbs: true,
         },
     };
 }

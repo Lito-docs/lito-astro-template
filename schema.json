@@ -152,9 +152,58 @@
     },
     "seo": {
       "type": "object",
+      "description": "SEO configuration for the documentation site",
       "properties": {
-        "ogImage": { "type": "string" },
-        "twitterHandle": { "type": "string" }
+        "ogImage": {
+          "type": "string",
+          "description": "Default Open Graph image URL for pages without a custom ogImage"
+        },
+        "twitterHandle": {
+          "type": "string",
+          "description": "Twitter handle for twitter:creator meta tag (e.g., @username)"
+        },
+        "twitterSite": {
+          "type": "string",
+          "description": "Twitter site handle, defaults to twitterHandle if not specified"
+        },
+        "defaultAuthor": {
+          "type": "string",
+          "description": "Default author name for article metadata"
+        },
+        "defaultKeywords": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Default keywords applied to all pages"
+        },
+        "enableJsonLd": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable JSON-LD structured data generation"
+        },
+        "organizationName": {
+          "type": "string",
+          "description": "Organization name for JSON-LD publisher info"
+        },
+        "organizationLogo": {
+          "type": "string",
+          "description": "Organization logo URL for JSON-LD structured data"
+        },
+        "articleType": {
+          "type": "string",
+          "enum": ["TechArticle", "Article"],
+          "default": "TechArticle",
+          "description": "Default article type for JSON-LD: TechArticle for technical docs, Article for general"
+        },
+        "autoCanonical": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically generate canonical URLs for pages"
+        },
+        "enableBreadcrumbs": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable breadcrumb JSON-LD structured data"
+        }
       }
     }
   }

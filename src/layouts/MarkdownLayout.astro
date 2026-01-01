@@ -1,8 +1,9 @@
 ---
 import type { MarkdownLayoutProps } from 'astro';
 import DocLayout from './DocLayout.astro';
+import type { SEOFrontmatter } from '../types/seo';
 
-type Props = MarkdownLayoutProps<{
+type Props = MarkdownLayoutProps<SEOFrontmatter & {
   title: string;
   description?: string;
 }>;
@@ -10,6 +11,6 @@ type Props = MarkdownLayoutProps<{
 const { frontmatter } = Astro.props;
 ---
 
-<DocLayout title={frontmatter.title} description={frontmatter.description}>
+<DocLayout title={frontmatter.title} description={frontmatter.description} frontmatter={frontmatter}>
   <slot />
 </DocLayout>

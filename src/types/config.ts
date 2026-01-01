@@ -86,6 +86,10 @@ export interface SidebarItem {
     slug?: string;
     href?: string;
     icon?: string;
+    /** HTTP method for API endpoints (GET, POST, PUT, PATCH, DELETE) */
+    method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+    /** Nested items for sub-groups */
+    items?: SidebarItem[];
 }
 
 export interface FooterConfig {
@@ -115,6 +119,26 @@ export interface IntegrationsConfig {
 }
 
 export interface SEOConfig {
+    /** Default Open Graph image for pages without a custom ogImage */
     ogImage: string;
+    /** Twitter handle for twitter:creator meta tag */
     twitterHandle: string;
+    /** Twitter site handle (defaults to twitterHandle if not specified) */
+    twitterSite?: string;
+    /** Default author name for article metadata */
+    defaultAuthor?: string;
+    /** Default keywords applied to all pages */
+    defaultKeywords?: string[];
+    /** Enable JSON-LD structured data (default: true) */
+    enableJsonLd?: boolean;
+    /** Organization name for JSON-LD publisher info */
+    organizationName?: string;
+    /** Organization logo URL for JSON-LD */
+    organizationLogo?: string;
+    /** Default article type: 'TechArticle' for technical docs, 'Article' for general */
+    articleType?: 'TechArticle' | 'Article';
+    /** Generate canonical URLs automatically (default: true) */
+    autoCanonical?: boolean;
+    /** Enable breadcrumb JSON-LD (default: true) */
+    enableBreadcrumbs?: boolean;
 }

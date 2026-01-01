@@ -1,0 +1,242 @@
+---
+import { SEO } from 'astro-seo';
+import type { SEOFrontmatter, ArticleJsonLd, BreadcrumbJsonLd } from '../types/seo';
+import type { DocsConfig } from '../types/config';
+import { createLink } from '../utils/url';
+
+interface Props {
+  title: string;
+  description?: string;
+  frontmatter?: SEOFrontmatter;
+  config: DocsConfig;
+  currentPath: string;
+  breadcrumbs?: Array<{ name: string; href?: string }>;
+}
+
+const { title, description, frontmatter = {}, config, currentPath, breadcrumbs = [] } = Astro.props;
+
+// Build the site URL
+const siteUrl = config.metadata.url?.replace(/\/$/, '') || '';
+const currentUrl = siteUrl + currentPath;
+
+// Determine canonical URL
+const canonical = frontmatter.canonical ||
+  (config.seo.autoCanonical !== false ? currentUrl : undefined);
+
+// Build full title
+const fullTitle = `${frontmatter.title || title} | ${config.metadata.name}`;
+
+// Get description with fallback
+const pageDescription = frontmatter.description || description || config.metadata.description;
+
+// Build OG Image URL (ensure absolute URL)
+const ogImage = frontmatter.ogImage || config.seo.ogImage;
+const ogImageUrl = ogImage?.startsWith('http')
+  ? ogImage
+  : siteUrl + createLink(ogImage || '/og-image.png');
+
+// Determine OG type
+const ogType = frontmatter.ogType || 'article';
+
+// Build keywords
+const keywords = [
+  ...(frontmatter.keywords || []),
+  ...(config.seo.defaultKeywords || [])
+].filter(Boolean);
+
+// Robots directives
+const robotsContent = [
+  frontmatter.noIndex ? 'noindex' : 'index',
+  frontmatter.noFollow ? 'nofollow' : 'follow'
+].join(', ');
+
+// Twitter handles
+const twitterCreator = config.seo.twitterHandle;
+const twitterSite = config.seo.twitterSite || config.seo.twitterHandle;
+
+// Author
+const author = frontmatter.author || config.seo.defaultAuthor;
+
+// JSON-LD Article structured data
+let articleJsonLd: ArticleJsonLd | null = null;
+if (config.seo.enableJsonLd !== false && ogType === 'article') {
+  const articleType = config.seo.articleType || 'TechArticle';
+  articleJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': articleType,
+    headline: frontmatter.title || title,
+    description: pageDescription,
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': currentUrl,
+    },
+    image: ogImageUrl,
+  };
+
+  if (author) {
+    articleJsonLd.author = {
+      '@type': 'Person',
+      name: author,
+    };
+  }
+
+  if (frontmatter.publishDate) {
+    articleJsonLd.datePublished = frontmatter.publishDate;
+  }
+
+  if (frontmatter.modifiedDate) {
+    articleJsonLd.dateModified = frontmatter.modifiedDate;
+  }
+
+  if (config.seo.organizationName) {
+    articleJsonLd.publisher = {
+      '@type': 'Organization',
+      name: config.seo.organizationName,
+    };
+    if (config.seo.organizationLogo) {
+      articleJsonLd.publisher.logo = {
+        '@type': 'ImageObject',
+        url: config.seo.organizationLogo.startsWith('http')
+          ? config.seo.organizationLogo
+          : siteUrl + createLink(config.seo.organizationLogo),
+      };
+    }
+  }
+
+  if (keywords.length > 0) {
+    articleJsonLd.keywords = keywords.join(', ');
+  }
+
+  if (frontmatter.section) {
+    articleJsonLd.articleSection = frontmatter.section;
+  }
+}
+
+// JSON-LD Breadcrumb structured data
+let breadcrumbJsonLd: BreadcrumbJsonLd | null = null;
+if (config.seo.enableBreadcrumbs !== false && breadcrumbs.length > 0) {
+  breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: breadcrumbs.map((crumb, index) => ({
+      '@type': 'ListItem' as const,
+      position: index + 1,
+      name: crumb.name,
+      ...(crumb.href && index < breadcrumbs.length - 1 ? { item: siteUrl + crumb.href } : {}),
+    })),
+  };
+}
+
+// Additional meta tags for article
+const additionalMetaTags = [];
+
+if (keywords.length > 0) {
+  additionalMetaTags.push({
+    name: 'keywords',
+    content: keywords.join(', '),
+  });
+}
+
+if (author) {
+  additionalMetaTags.push({
+    name: 'author',
+    content: author,
+  });
+}
+
+if (frontmatter.publishDate) {
+  additionalMetaTags.push({
+    property: 'article:published_time',
+    content: frontmatter.publishDate,
+  });
+}
+
+if (frontmatter.modifiedDate) {
+  additionalMetaTags.push({
+    property: 'article:modified_time',
+    content: frontmatter.modifiedDate,
+  });
+}
+
+if (frontmatter.section) {
+  additionalMetaTags.push({
+    property: 'article:section',
+    content: frontmatter.section,
+  });
+}
+
+if (frontmatter.tags) {
+  frontmatter.tags.forEach(tag => {
+    additionalMetaTags.push({
+      property: 'article:tag',
+      content: tag,
+    });
+  });
+}
+
+// Reading time
+if (frontmatter.readingTime) {
+  additionalMetaTags.push({
+    name: 'twitter:label1',
+    content: 'Reading time',
+  });
+  additionalMetaTags.push({
+    name: 'twitter:data1',
+    content: `${frontmatter.readingTime} min read`,
+  });
+}
+
+additionalMetaTags.push({
+  name: 'robots',
+  content: robotsContent,
+});
+---
+
+<SEO
+  title={fullTitle}
+  description={pageDescription}
+  canonical={canonical}
+  openGraph={{
+    basic: {
+      title: fullTitle,
+      type: ogType,
+      image: ogImageUrl,
+      url: currentUrl,
+    },
+    optional: {
+      description: pageDescription,
+      siteName: config.metadata.name,
+      locale: 'en_US',
+    },
+    image: {
+      alt: frontmatter.title || title,
+    },
+    article: ogType === 'article' ? {
+      publishedTime: frontmatter.publishDate,
+      modifiedTime: frontmatter.modifiedDate,
+      authors: author ? [author] : undefined,
+      section: frontmatter.section,
+      tags: frontmatter.tags,
+    } : undefined,
+  }}
+  twitter={{
+    card: 'summary_large_image',
+    site: twitterSite,
+    creator: twitterCreator,
+    title: fullTitle,
+    description: pageDescription,
+    image: ogImageUrl,
+    imageAlt: frontmatter.title || title,
+  }}
+  extend={{
+    meta: additionalMetaTags,
+  }}
+/>
+
+{articleJsonLd && (
+  <script is:inline type="application/ld+json" set:html={JSON.stringify(articleJsonLd)} />
+)}
+
+{breadcrumbJsonLd && (
+  <script is:inline type="application/ld+json" set:html={JSON.stringify(breadcrumbJsonLd)} />
+)}
