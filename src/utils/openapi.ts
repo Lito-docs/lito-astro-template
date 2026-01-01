@@ -181,3 +181,73 @@ export function getEndpointsByTag(
 ): APIEndpoint[] {
     return parsed.endpoints.filter((e) => e.tags?.includes(tag));
 }
+
+/**
+ * Generate a URL-friendly slug from an endpoint
+ * Example: GET /users/{id} -> get-users-id
+ */
+export function generateEndpointSlug(endpoint: APIEndpoint): string {
+    const methodPart = endpoint.method.toLowerCase();
+    const pathPart = endpoint.path
+        .replace(/^\//, '') // Remove leading slash
+        .replace(/\{([^}]+)\}/g, '$1') // Remove braces from params: {id} -> id
+        .replace(/[^a-zA-Z0-9]+/g, '-') // Replace non-alphanumeric with hyphens
+        .replace(/-+/g, '-') // Collapse multiple hyphens
+        .replace(/-$/, '') // Remove trailing hyphen
+        .toLowerCase();
+
+    return pathPart ? `${methodPart}-${pathPart}` : methodPart;
+}
+
+/**
+ * Generate static paths for all endpoints (for use with getStaticPaths)
+ */
+export function generateEndpointPaths(
+    parsed: ParsedOpenAPI,
+    baseUrl?: string
+): EndpointPageData[] {
+    return parsed.endpoints.map((endpoint) => ({
+        slug: generateEndpointSlug(endpoint),
+        endpoint,
+        spec: parsed,
+        baseUrl: baseUrl || parsed.servers?.[0]?.url || '',
+    }));
+}
+
+export interface EndpointPageData {
+    slug: string;
+    endpoint: APIEndpoint;
+    spec: ParsedOpenAPI;
+    baseUrl: string;
+}
+
+/**
+ * Find endpoint by slug
+ */
+export function getEndpointBySlug(
+    parsed: ParsedOpenAPI,
+    slug: string
+): APIEndpoint | undefined {
+    return parsed.endpoints.find((e) => generateEndpointSlug(e) === slug);
+}
+
+/**
+ * Group endpoints by tag for navigation
+ */
+export function groupEndpointsByTag(
+    parsed: ParsedOpenAPI
+): Record<string, APIEndpoint[]> {
+    const groups: Record<string, APIEndpoint[]> = {};
+
+    for (const endpoint of parsed.endpoints) {
+        const tags = endpoint.tags?.length ? endpoint.tags : ['Other'];
+        for (const tag of tags) {
+            if (!groups[tag]) {
+                groups[tag] = [];
+            }
+            groups[tag].push(endpoint);
+        }
+    }
+
+    return groups;
+}

@@ -1,0 +1,66 @@
+---
+/**
+ * Dynamic API Reference Route
+ *
+ * This file generates individual pages for each endpoint in an OpenAPI spec.
+ * Place your openapi.yaml file in your docs folder and update the path below.
+ *
+ * Generated routes: /api/[slug]
+ * Example: /api/get-users, /api/post-users, /api/get-users-id
+ */
+import EndpointPage from '../../components/api/EndpointPage.astro';
+import {
+  parseOpenAPIFile,
+  generateEndpointPaths,
+  getEndpointBySlug,
+  type ParsedOpenAPI,
+} from '../../utils/openapi';
+import { resolve } from 'path';
+
+// Load your OpenAPI spec
+// Update this path to point to your OpenAPI/Swagger file
+const specPath = resolve(process.cwd(), 'src/pages/openapi.yaml');
+
+let spec: ParsedOpenAPI;
+try {
+  spec = await parseOpenAPIFile(specPath);
+} catch (e) {
+  // Fallback for when the spec doesn't exist yet
+  spec = {
+    info: { title: 'API', version: '1.0.0' },
+    endpoints: [],
+  };
+}
+
+export async function getStaticPaths() {
+  const specPath = resolve(process.cwd(), 'src/pages/openapi.yaml');
+
+  let spec: ParsedOpenAPI;
+  try {
+    spec = await parseOpenAPIFile(specPath);
+  } catch (e) {
+    return [];
+  }
+
+  const paths = generateEndpointPaths(spec);
+
+  return paths.map((data) => ({
+    params: { slug: data.slug },
+    props: {
+      endpoint: data.endpoint,
+      spec: data.spec,
+      baseUrl: data.baseUrl,
+    },
+  }));
+}
+
+interface Props {
+  endpoint: import('../../utils/openapi').APIEndpoint;
+  spec: ParsedOpenAPI;
+  baseUrl: string;
+}
+
+const { endpoint, spec: pageSpec, baseUrl } = Astro.props;
+---
+
+<EndpointPage endpoint={endpoint} spec={pageSpec} baseUrl={baseUrl} />
