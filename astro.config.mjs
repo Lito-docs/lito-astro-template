@@ -6,11 +6,21 @@ import embeds from 'astro-embed/integration';
 import expressiveCode from 'astro-expressive-code';
 import mermaid from 'astro-mermaid';
 import icon from 'astro-icon';
+import sitemap from 'astro-sitemap';
+import compress from '@playform/compress';
+import partytown from '@astrojs/partytown';
 import remarkGithubAlerts from './src/plugins/remark-github-alerts.js';
 
 // https://astro.build/config
 export default defineConfig({
   integrations: [
+    sitemap(),
+    compress(),
+    partytown({
+      config: {
+        forward: ['dataLayer.push'],
+      },
+    }),
     icon({
       include: {
         lucide: ['*'],
@@ -18,6 +28,7 @@ export default defineConfig({
         mdi: ['*'],
         'fa6-solid': ['*'],
         'fa6-brands': ['*'],
+        'simple-icons': ['*'],
       },
     }),
     mermaid({
@@ -67,6 +78,11 @@ export default defineConfig({
         './src/components/landing/DocsHero.astro',
         './src/components/landing/DocsFeatureGrid.astro',
         './src/components/landing/DocsFeature.astro',
+
+        // Changelog
+        './src/components/mdx/Changelog.astro',
+        './src/components/mdx/ChangelogEntry.astro',
+        './src/components/mdx/ChangelogItem.astro',
 
         // Embeds
         {
