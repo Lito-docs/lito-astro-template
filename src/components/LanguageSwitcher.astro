@@ -1,0 +1,109 @@
+---
+import { getI18nConfig, getLocaleFromPath, localizedPath, getLocaleDisplayNames, isRTL } from '../utils/i18n';
+import { Icon } from 'astro-icon/components';
+
+const config = await getI18nConfig();
+const { locales, defaultLocale, routing } = config;
+const prefixDefaultLocale = routing?.prefixDefaultLocale ?? false;
+
+const currentPath = Astro.url.pathname;
+const currentLocale = getLocaleFromPath(currentPath, locales) || defaultLocale;
+
+const displayNames = getLocaleDisplayNames();
+
+// Only show if there are multiple locales
+const showSwitcher = locales.length > 1;
+---
+
+{showSwitcher && (
+  <div class="language-switcher relative">
+    <button
+      id="language-switcher-btn"
+      type="button"
+      class="flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors hover:bg-muted"
+      aria-label="Select language"
+      aria-haspopup="listbox"
+      aria-expanded="false"
+    >
+      <Icon name="lucide:globe" class="w-4 h-4" />
+      <span class="hidden sm:inline">{displayNames[currentLocale] || currentLocale.toUpperCase()}</span>
+      <Icon name="lucide:chevron-down" class="w-3 h-3 transition-transform" />
+    </button>
+
+    <div
+      id="language-dropdown"
+      class="absolute right-0 top-full mt-1 min-w-[160px] py-1 bg-popover border border-border rounded-lg shadow-lg opacity-0 invisible transition-all duration-150 z-50"
+      role="listbox"
+      aria-label="Available languages"
+    >
+      {locales.map((locale) => {
+        const isActive = locale === currentLocale;
+        const href = localizedPath(currentPath, locale, defaultLocale, prefixDefaultLocale, locales);
+        const rtl = isRTL(locale);
+
+        return (
+          <a
+            href={href}
+            role="option"
+            aria-selected={isActive}
+            class:list={[
+              'flex items-center gap-2 px-3 py-2 text-sm transition-colors',
+              isActive ? 'bg-primary-100 text-primary-700 font-medium' : 'hover:bg-muted text-foreground',
+              rtl && 'flex-row-reverse text-right',
+            ]}
+            data-locale={locale}
+          >
+            {isActive && <Icon name="lucide:check" class="w-4 h-4" />}
+            <span class={!isActive ? 'ml-6' : ''}>{displayNames[locale] || locale.toUpperCase()}</span>
+          </a>
+        );
+      })}
+    </div>
+  </div>
+)}
+
+<script>
+  const btn = document.getElementById('language-switcher-btn');
+  const dropdown = document.getElementById('language-dropdown');
+
+  if (btn && dropdown) {
+    btn.addEventListener('click', () => {
+      const isOpen = dropdown.classList.contains('opacity-100');
+
+      if (isOpen) {
+        dropdown.classList.remove('opacity-100', 'visible');
+        dropdown.classList.add('opacity-0', 'invisible');
+        btn.setAttribute('aria-expanded', 'false');
+      } else {
+        dropdown.classList.remove('opacity-0', 'invisible');
+        dropdown.classList.add('opacity-100', 'visible');
+        btn.setAttribute('aria-expanded', 'true');
+      }
+    });
+
+    // Close on click outside
+    document.addEventListener('click', (e) => {
+      if (!btn.contains(e.target as Node) && !dropdown.contains(e.target as Node)) {
+        dropdown.classList.remove('opacity-100', 'visible');
+        dropdown.classList.add('opacity-0', 'invisible');
+        btn.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    // Close on escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        dropdown.classList.remove('opacity-100', 'visible');
+        dropdown.classList.add('opacity-0', 'invisible');
+        btn.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+</script>
+
+<style>
+  .language-switcher button:focus-visible {
+    outline: 2px solid var(--primary-500);
+    outline-offset: 2px;
+  }
+</style>
