@@ -39,6 +39,16 @@ export interface DocsConfig {
     integrations: IntegrationsConfig;
     seo: SEOConfig;
     landing?: LandingConfig;
+    i18n?: I18nConfig;
+}
+
+export interface I18nConfig {
+    defaultLocale?: string;
+    locales?: string[];
+    routing?: {
+        prefixDefaultLocale?: boolean;
+    };
+    translations?: Record<string, Record<string, string>>;
 }
 
 export interface LandingConfig {
