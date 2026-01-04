@@ -1,0 +1,108 @@
+---
+/**
+ * ChangelogItem - Individual change item within a ChangelogEntry
+ *
+ * Props:
+ * - type: Change type - 'added' | 'changed' | 'deprecated' | 'removed' | 'fixed' | 'security'
+ * - icon: Optional custom icon (overrides default type icon)
+ */
+import Icon from '../Icon.astro';
+
+interface Props {
+  type?: 'added' | 'changed' | 'deprecated' | 'removed' | 'fixed' | 'security';
+  icon?: string;
+}
+
+const { type = 'changed', icon } = Astro.props;
+
+const typeConfig: Record<string, { icon: string; color: string; label: string }> = {
+  added: {
+    icon: 'lucide:plus-circle',
+    color: 'var(--success)',
+    label: 'Added',
+  },
+  changed: {
+    icon: 'lucide:edit-3',
+    color: 'var(--info)',
+    label: 'Changed',
+  },
+  deprecated: {
+    icon: 'lucide:alert-triangle',
+    color: 'var(--warning)',
+    label: 'Deprecated',
+  },
+  removed: {
+    icon: 'lucide:minus-circle',
+    color: 'var(--danger)',
+    label: 'Removed',
+  },
+  fixed: {
+    icon: 'lucide:check-circle-2',
+    color: 'var(--success)',
+    label: 'Fixed',
+  },
+  security: {
+    icon: 'lucide:shield-alert',
+    color: 'var(--danger)',
+    label: 'Security',
+  },
+};
+
+const config = typeConfig[type] || typeConfig.changed;
+const displayIcon = icon || config.icon;
+---
+
+<div class="changelog-item" style={`--item-color: ${config.color};`}>
+  <span class="item-icon">
+    <Icon name={displayIcon} size={18} />
+  </span>
+  <div class="item-content">
+    <span class="item-label">{config.label}:</span>
+    <span class="item-text"><slot /></span>
+  </div>
+</div>
+
+<style>
+  .changelog-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    padding: 0.5rem 0;
+  }
+
+  .changelog-item:last-child {
+    margin-bottom: 0;
+  }
+
+  .item-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 1.5rem;
+    height: 1.5rem;
+    color: var(--item-color);
+    margin-top: 0.125rem;
+  }
+
+  .item-content {
+    flex: 1;
+    line-height: 1.5;
+  }
+
+  .item-label {
+    font-weight: 600;
+    color: var(--item-color);
+    margin-right: 0.375rem;
+  }
+
+  .item-text {
+    color: var(--foreground);
+  }
+
+  /* Dark mode adjustments */
+  :global(.dark) .item-text {
+    color: var(--muted-foreground);
+  }
+</style>
