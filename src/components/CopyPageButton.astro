@@ -1,0 +1,484 @@
+---
+/**
+ * CopyPageButton - Inline copy button with dropdown menu
+ *
+ * Features:
+ * - Copy page as Markdown (for LLM)
+ * - Open in ChatGPT
+ * - Open in Claude
+ */
+import Icon from './Icon.astro';
+import { getConfigFile } from '../utils/config';
+
+const config = await getConfigFile();
+const copyConfig = config.integrations?.copyPage;
+const isEnabled = copyConfig?.enabled !== false;
+---
+
+{isEnabled && (
+  <div class="copy-page-button-container" id="copy-page-btn-container">
+    <button
+      id="copy-page-trigger"
+      class="copy-page-trigger"
+      aria-label="Copy page"
+      aria-haspopup="listbox"
+      aria-expanded="false"
+    >
+      <Icon name="lucide:copy" size={14} />
+      <span>Copy page</span>
+      <Icon name="lucide:chevron-down" size={14} class="chevron-icon" />
+    </button>
+
+    <div id="copy-page-dropdown" class="copy-page-dropdown hidden">
+      <button class="dropdown-item" data-action="copy-markdown">
+        <Icon name="lucide:file-text" size={16} />
+        <div class="dropdown-item-content">
+          <span class="dropdown-item-title">Copy as Markdown</span>
+          <span class="dropdown-item-desc">Copy page content for LLM</span>
+        </div>
+      </button>
+
+      <div class="dropdown-divider"></div>
+
+      <button class="dropdown-item" data-action="open-ai" data-provider="chatgpt">
+        <Icon name="simple-icons:openai" size={16} />
+        <div class="dropdown-item-content">
+          <span class="dropdown-item-title">Open in ChatGPT</span>
+          <span class="dropdown-item-desc">Ask ChatGPT about this page</span>
+        </div>
+      </button>
+
+      <button class="dropdown-item" data-action="open-ai" data-provider="claude">
+        <Icon name="simple-icons:anthropic" size={16} />
+        <div class="dropdown-item-content">
+          <span class="dropdown-item-title">Open in Claude</span>
+          <span class="dropdown-item-desc">Ask Claude about this page</span>
+        </div>
+      </button>
+    </div>
+  </div>
+)}
+
+<div id="copy-toast-container" class="fixed bottom-6 right-6 z-50 space-y-2 pointer-events-none"></div>
+
+<script>
+  const trigger = document.getElementById('copy-page-trigger');
+  const dropdown = document.getElementById('copy-page-dropdown');
+  const container = document.getElementById('copy-page-btn-container');
+
+  if (trigger && dropdown) {
+    // Toggle dropdown
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isHidden = dropdown.classList.contains('hidden');
+      dropdown.classList.toggle('hidden');
+      trigger.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+      trigger.classList.toggle('active', isHidden);
+    });
+
+    // Close dropdown on outside click
+    document.addEventListener('click', (e) => {
+      if (container && !container.contains(e.target as Node)) {
+        dropdown.classList.add('hidden');
+        trigger.setAttribute('aria-expanded', 'false');
+        trigger.classList.remove('active');
+      }
+    });
+
+    // Close on escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !dropdown.classList.contains('hidden')) {
+        dropdown.classList.add('hidden');
+        trigger.setAttribute('aria-expanded', 'false');
+        trigger.classList.remove('active');
+      }
+    });
+
+    // Handle dropdown item clicks
+    dropdown.querySelectorAll('.dropdown-item').forEach((item) => {
+      item.addEventListener('click', async (e) => {
+        const target = e.currentTarget as HTMLElement;
+        const action = target.dataset.action;
+        const provider = target.dataset.provider;
+
+        switch (action) {
+          case 'copy-markdown':
+            await copyAsMarkdown();
+            break;
+          case 'open-ai':
+            if (provider) await openInAI(provider);
+            break;
+        }
+
+        dropdown.classList.add('hidden');
+        trigger.setAttribute('aria-expanded', 'false');
+        trigger.classList.remove('active');
+      });
+    });
+  }
+
+  async function copyToClipboard(text: string): Promise<boolean> {
+    try {
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+      // Fallback
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function getPageMarkdown(): string {
+    const article = document.querySelector('article') || document.querySelector('main');
+    if (!article) return '';
+
+    const title = document.querySelector('h1')?.textContent || document.title || '';
+    const description = document.querySelector('meta[name="description"]')?.getAttribute('content') || '';
+    const url = window.location.href;
+
+    let markdown = `# ${title}\n\n`;
+    if (description) {
+      markdown += `> ${description}\n\n`;
+    }
+    markdown += `Source: ${url}\n\n---\n\n`;
+    markdown += htmlToMarkdown(article);
+
+    return markdown;
+  }
+
+  function htmlToMarkdown(element: Element): string {
+    let result = '';
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT);
+
+    let node: Node | null = walker.currentNode;
+    const processedNodes = new Set<Node>();
+
+    while (node) {
+      if (processedNodes.has(node)) {
+        node = walker.nextNode();
+        continue;
+      }
+
+      if (node.nodeType === Node.TEXT_NODE) {
+        const text = node.textContent?.trim();
+        if (text) {
+          result += text + ' ';
+        }
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        const el = node as Element;
+        const tagName = el.tagName.toLowerCase();
+
+        if (['script', 'style', 'noscript', 'svg', 'button'].includes(tagName)) {
+          processedNodes.add(node);
+          node = walker.nextNode();
+          continue;
+        }
+
+        switch (tagName) {
+          case 'h1':
+            result += `\n\n# ${el.textContent?.trim()}\n\n`;
+            processedNodes.add(node);
+            break;
+          case 'h2':
+            result += `\n\n## ${el.textContent?.trim()}\n\n`;
+            processedNodes.add(node);
+            break;
+          case 'h3':
+            result += `\n\n### ${el.textContent?.trim()}\n\n`;
+            processedNodes.add(node);
+            break;
+          case 'h4':
+            result += `\n\n#### ${el.textContent?.trim()}\n\n`;
+            processedNodes.add(node);
+            break;
+          case 'h5':
+            result += `\n\n##### ${el.textContent?.trim()}\n\n`;
+            processedNodes.add(node);
+            break;
+          case 'h6':
+            result += `\n\n###### ${el.textContent?.trim()}\n\n`;
+            processedNodes.add(node);
+            break;
+          case 'p':
+            result += `\n${el.textContent?.trim()}\n`;
+            processedNodes.add(node);
+            break;
+          case 'a':
+            const href = el.getAttribute('href') || '';
+            const linkText = el.textContent?.trim() || '';
+            result += `[${linkText}](${href})`;
+            processedNodes.add(node);
+            break;
+          case 'code':
+            if (el.parentElement?.tagName.toLowerCase() !== 'pre') {
+              result += `\`${el.textContent?.trim()}\``;
+              processedNodes.add(node);
+            }
+            break;
+          case 'pre':
+            const code = el.querySelector('code');
+            const lang = code?.className.match(/language-(\w+)/)?.[1] || '';
+            result += `\n\n\`\`\`${lang}\n${el.textContent?.trim()}\n\`\`\`\n\n`;
+            processedNodes.add(node);
+            break;
+          case 'strong':
+          case 'b':
+            result += `**${el.textContent?.trim()}**`;
+            processedNodes.add(node);
+            break;
+          case 'em':
+          case 'i':
+            result += `*${el.textContent?.trim()}*`;
+            processedNodes.add(node);
+            break;
+          case 'ul':
+            result += '\n';
+            break;
+          case 'ol':
+            result += '\n';
+            break;
+          case 'li':
+            const parent = el.parentElement;
+            if (parent?.tagName.toLowerCase() === 'ol') {
+              const index = Array.from(parent.children).indexOf(el) + 1;
+              result += `${index}. ${el.textContent?.trim()}\n`;
+            } else {
+              result += `- ${el.textContent?.trim()}\n`;
+            }
+            processedNodes.add(node);
+            break;
+          case 'blockquote':
+            result += `\n> ${el.textContent?.trim()}\n`;
+            processedNodes.add(node);
+            break;
+          case 'hr':
+            result += '\n---\n';
+            break;
+          case 'br':
+            result += '\n';
+            break;
+        }
+      }
+
+      node = walker.nextNode();
+    }
+
+    return result.replace(/\n{3,}/g, '\n\n').trim();
+  }
+
+  async function copyAsMarkdown(): Promise<void> {
+    const markdown = getPageMarkdown();
+    const success = await copyToClipboard(markdown);
+    showToast(success ? 'Copied as Markdown!' : 'Failed to copy', success ? 'success' : 'error');
+  }
+
+  async function openInAI(provider: string): Promise<void> {
+    const markdown = getPageMarkdown();
+    const title = document.title || 'Documentation';
+
+    const prompt = `I'm reading this documentation page and would like your help understanding it:\n\n${markdown}`;
+
+    const providers: Record<string, { url: string }> = {
+      chatgpt: { url: 'https://chatgpt.com/' },
+      claude: { url: 'https://claude.ai/new' },
+    };
+
+    const config = providers[provider] || providers.chatgpt;
+
+    await copyToClipboard(prompt);
+    showToast(`Content copied! Opening ${provider === 'chatgpt' ? 'ChatGPT' : 'Claude'}...`, 'success');
+
+    setTimeout(() => {
+      window.open(config.url, '_blank');
+    }, 500);
+  }
+
+  function showToast(message: string, type: 'success' | 'error' = 'success'): void {
+    const container = document.getElementById('copy-toast-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `copy-toast copy-toast-${type}`;
+    toast.innerHTML = `
+      <svg class="copy-toast-icon" viewBox="0 0 20 20" fill="currentColor" width="20" height="20">
+        ${type === 'success'
+          ? '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />'
+          : '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />'
+        }
+      </svg>
+      <span>${message}</span>
+    `;
+
+    container.appendChild(toast);
+
+    requestAnimationFrame(() => {
+      toast.classList.add('show');
+    });
+
+    setTimeout(() => {
+      toast.classList.remove('show');
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  }
+</script>
+
+<style>
+  .copy-page-button-container {
+    position: relative;
+    display: inline-block;
+    font-family: var(--font-sans);
+  }
+
+  .copy-page-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.625rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--muted-foreground);
+    background: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .copy-page-trigger:hover {
+    color: var(--foreground);
+    background: var(--accent);
+    border-color: var(--border);
+  }
+
+  .copy-page-trigger.active {
+    color: var(--foreground);
+    background: var(--accent);
+  }
+
+  .copy-page-trigger .chevron-icon {
+    transition: transform 0.15s ease;
+  }
+
+  .copy-page-trigger.active .chevron-icon {
+    transform: rotate(180deg);
+  }
+
+  .copy-page-dropdown {
+    position: absolute;
+    top: calc(100% + 0.375rem);
+    left: 0;
+    min-width: 260px;
+    padding: 0.375rem;
+    background: var(--popover);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    box-shadow:
+      0 4px 20px -4px rgba(0, 0, 0, 0.15),
+      0 2px 8px -2px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+    opacity: 1;
+    transform: translateY(0);
+    transition: all 0.15s ease;
+  }
+
+  .copy-page-dropdown.hidden {
+    opacity: 0;
+    transform: translateY(-4px);
+    pointer-events: none;
+  }
+
+  .dropdown-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
+    width: 100%;
+    padding: 0.5rem 0.625rem;
+    font-size: 0.8125rem;
+    color: var(--foreground);
+    background: transparent;
+    border: none;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    text-align: left;
+  }
+
+  .dropdown-item > [data-icon] {
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+  }
+
+  .dropdown-item-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+
+  .dropdown-item-title {
+    font-weight: 500;
+    color: var(--foreground);
+  }
+
+  .dropdown-item-desc {
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+  }
+
+  .dropdown-item:hover {
+    background: var(--muted);
+  }
+
+  .dropdown-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 0.375rem 0;
+  }
+
+  /* Toast styles */
+  :global(.copy-toast) {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: var(--popover);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    font-size: 0.875rem;
+    color: var(--foreground);
+    transform: translateX(100%);
+    opacity: 0;
+    transition: all 0.3s ease;
+    pointer-events: auto;
+  }
+
+  :global(.copy-toast.show) {
+    transform: translateX(0);
+    opacity: 1;
+  }
+
+  :global(.copy-toast-success .copy-toast-icon) {
+    color: var(--success);
+  }
+
+  :global(.copy-toast-error .copy-toast-icon) {
+    color: var(--danger);
+  }
+
+  /* Dark mode shadows */
+  :global(.dark) .copy-page-dropdown {
+    box-shadow:
+      0 4px 20px -4px rgba(0, 0, 0, 0.4),
+      0 2px 8px -2px rgba(0, 0, 0, 0.3);
+  }
+</style>
