@@ -122,25 +122,92 @@
     },
     "footer": {
       "type": "object",
+      "description": "Footer configuration for the documentation site",
       "properties": {
-        "socials": { "type": "object" },
+        "logo": {
+          "type": "object",
+          "description": "Footer logo configuration (uses branding logo if not specified)",
+          "properties": {
+            "src": { "type": "string", "description": "Logo image URL or path" },
+            "alt": { "type": "string", "description": "Alt text for the logo" },
+            "href": { "type": "string", "description": "Link when clicking the logo" },
+            "height": { "type": "number", "description": "Logo height in pixels", "default": 32 }
+          }
+        },
+        "tagline": {
+          "type": "string",
+          "description": "Company tagline or description displayed under the logo"
+        },
+        "copyright": {
+          "type": "string",
+          "description": "Custom copyright text. Use {year} placeholder for current year (e.g., '© {year} Acme Inc. All rights reserved.')"
+        },
+        "showBranding": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show 'Built with Lito' branding in the footer"
+        },
+        "showVersion": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the documentation version in the footer"
+        },
+        "layout": {
+          "type": "string",
+          "enum": ["full", "compact", "centered"],
+          "default": "full",
+          "description": "Footer layout variant: 'full' (logo + links + socials), 'compact' (minimal), 'centered' (centered content)"
+        },
+        "socials": {
+          "type": "object",
+          "description": "Social media links. Keys are platform names, values are URLs.",
+          "properties": {
+            "github": { "type": "string", "description": "GitHub profile or repo URL" },
+            "twitter": { "type": "string", "description": "Twitter/X profile URL" },
+            "discord": { "type": "string", "description": "Discord invite URL" },
+            "linkedin": { "type": "string", "description": "LinkedIn profile or company URL" },
+            "youtube": { "type": "string", "description": "YouTube channel URL" },
+            "mastodon": { "type": "string", "description": "Mastodon profile URL" },
+            "bluesky": { "type": "string", "description": "Bluesky profile URL" },
+            "reddit": { "type": "string", "description": "Reddit community URL" },
+            "slack": { "type": "string", "description": "Slack workspace invite URL" },
+            "email": { "type": "string", "description": "Email address (mailto: link)" }
+          },
+          "additionalProperties": { "type": "string" }
+        },
         "links": {
           "type": "array",
+          "description": "Footer link sections organized in columns",
           "items": {
             "type": "object",
             "properties": {
-              "title": { "type": "string" },
+              "title": { "type": "string", "description": "Section heading" },
               "items": {
                 "type": "array",
                 "items": {
                   "type": "object",
                   "properties": {
-                    "label": { "type": "string" },
-                    "href": { "type": "string" }
-                  }
+                    "label": { "type": "string", "description": "Link text" },
+                    "href": { "type": "string", "description": "Link URL" },
+                    "external": { "type": "boolean", "description": "Open in new tab", "default": false }
+                  },
+                  "required": ["label", "href"]
                 }
               }
-            }
+            },
+            "required": ["title", "items"]
+          }
+        },
+        "bottomLinks": {
+          "type": "array",
+          "description": "Additional links shown in the bottom bar (e.g., Privacy Policy, Terms)",
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": { "type": "string" },
+              "href": { "type": "string" }
+            },
+            "required": ["label", "href"]
           }
         }
       }

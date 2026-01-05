@@ -1,55 +1,538 @@
 ---
 import { getConfigFile } from '../utils/config';
 import { createLink } from '../utils/url';
+import { Icon } from 'astro-icon/components';
 
 const config = await getConfigFile();
 const { footer } = config;
 const currentYear = new Date().getFullYear();
+
+// Default values
+const layout = footer.layout ?? 'full';
+const showBranding = footer.showBranding ?? true;
+const showVersion = footer.showVersion ?? true;
+
+// Process copyright text with year placeholder
+const copyrightText = footer.copyright
+  ? footer.copyright.replace('{year}', currentYear.toString())
+  : `© ${currentYear} ${config.metadata.name}`;
+
+// Social media icons mapping
+const socialIcons: Record<string, string> = {
+  github: 'simple-icons:github',
+  twitter: 'simple-icons:x',
+  discord: 'simple-icons:discord',
+  linkedin: 'simple-icons:linkedin',
+  youtube: 'simple-icons:youtube',
+  mastodon: 'simple-icons:mastodon',
+  bluesky: 'simple-icons:bluesky',
+  reddit: 'simple-icons:reddit',
+  slack: 'simple-icons:slack',
+  email: 'lucide:mail',
+};
+
+// Get social entries
+const socialEntries = footer.socials ? Object.entries(footer.socials).filter(([_, url]) => url) : [];
+const hasLinks = footer.links && footer.links.length > 0;
+const hasBottomLinks = footer.bottomLinks && footer.bottomLinks.length > 0;
+
+// Get logo config (fallback to branding logo)
+const footerLogo = footer.logo ?? (config.branding?.logo ? {
+  src: config.branding.logo.light,
+  href: config.branding.logo.href || '/',
+  alt: config.metadata.name,
+  height: 32
+} : null);
 ---
 
-<footer class="mt-16  py-12  bg-background">
+<footer class:list={["footer-container mt-16 py-12 bg-background", `footer-${layout}`]}>
   <div class="w-full px-6 mx-auto">
-    {footer.links && footer.links.length > 0 && (
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
-        {footer.links.map((section) => (
-          <div>
-            <h4 class="font-semibold text-foreground mb-4 text-sm uppercase tracking-wide">{section.title}</h4>
-            <ul class="space-y-3 list-none m-0 p-0">
-              {section.items.map((item) => (
-                <li>
-                  <a 
-                    href={createLink(item.href)}
-                    class="text-sm text-muted-foreground hover:text-foreground transition-colors duration-200"
-                  >
-                    {item.label}
-                  </a>
-                </li>
+
+    {/* Full Layout: Logo/tagline on left, links in middle, socials on right */}
+    {layout === 'full' && (
+      <div class="footer-full-layout">
+        {/* Brand column */}
+        <div class="footer-brand">
+          {footerLogo && (
+            <a href={createLink(footerLogo.href || '/')} class="footer-logo-link">
+              <img
+                src={footerLogo.src}
+                alt={footerLogo.alt || config.metadata.name}
+                height={footerLogo.height || 32}
+                class="footer-logo"
+              />
+            </a>
+          )}
+          {!footerLogo && (
+            <a href={createLink('/')} class="footer-site-name">
+              {config.metadata.name}
+            </a>
+          )}
+          {footer.tagline && (
+            <p class="footer-tagline">{footer.tagline}</p>
+          )}
+          {/* Socials under brand on mobile, separate on desktop */}
+          {socialEntries.length > 0 && (
+            <div class="footer-socials-mobile">
+              {socialEntries.map(([platform, url]) => (
+                <a
+                  href={platform === 'email' ? `mailto:${url}` : url}
+                  class="footer-social-link"
+                  title={platform.charAt(0).toUpperCase() + platform.slice(1)}
+                  target={platform === 'email' ? undefined : '_blank'}
+                  rel={platform === 'email' ? undefined : 'noopener noreferrer'}
+                >
+                  <Icon name={socialIcons[platform] || 'lucide:link'} class="w-5 h-5" />
+                </a>
               ))}
-            </ul>
+            </div>
+          )}
+        </div>
+
+        {/* Link columns */}
+        {hasLinks && (
+          <div class="footer-links-grid">
+            {footer.links.map((section) => (
+              <div class="footer-link-section">
+                <h4 class="footer-section-title">{section.title}</h4>
+                <ul class="footer-link-list">
+                  {section.items.map((item) => (
+                    <li>
+                      <a
+                        href={createLink(item.href)}
+                        class="footer-link"
+                        target={item.external ? '_blank' : undefined}
+                        rel={item.external ? 'noopener noreferrer' : undefined}
+                      >
+                        {item.label}
+                        {item.external && <Icon name="lucide:external-link" class="w-3 h-3 ml-1 inline" />}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
-        ))}
+        )}
+
+        {/* Socials column (desktop) */}
+        {socialEntries.length > 0 && (
+          <div class="footer-socials-desktop">
+            {socialEntries.map(([platform, url]) => (
+              <a
+                href={platform === 'email' ? `mailto:${url}` : url}
+                class="footer-social-link"
+                title={platform.charAt(0).toUpperCase() + platform.slice(1)}
+                target={platform === 'email' ? undefined : '_blank'}
+                rel={platform === 'email' ? undefined : 'noopener noreferrer'}
+              >
+                <Icon name={socialIcons[platform] || 'lucide:link'} class="w-5 h-5" />
+              </a>
+            ))}
+          </div>
+        )}
       </div>
     )}
-    
-    <div class="border-t border-border pt-8">
-      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div class="text-sm text-muted-foreground">
-          <p class="m-0 flex flex-wrap items-center gap-2">
-            <span>© {currentYear}</span>
-            <span class="text-border">•</span>
-            <span>Built with <a href="#" class="text-foreground font-medium hover:underline transition-colors">Lito</a></span>
-            <span class="text-border">•</span>
-            <span>v{config.metadata.version}</span>
-          </p>
+
+    {/* Compact Layout: Just bottom bar style */}
+    {layout === 'compact' && (
+      <div class="footer-compact-layout">
+        {socialEntries.length > 0 && (
+          <div class="footer-socials-inline">
+            {socialEntries.map(([platform, url]) => (
+              <a
+                href={platform === 'email' ? `mailto:${url}` : url}
+                class="footer-social-link"
+                title={platform.charAt(0).toUpperCase() + platform.slice(1)}
+                target={platform === 'email' ? undefined : '_blank'}
+                rel={platform === 'email' ? undefined : 'noopener noreferrer'}
+              >
+                <Icon name={socialIcons[platform] || 'lucide:link'} class="w-5 h-5" />
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
+    )}
+
+    {/* Centered Layout: Everything centered */}
+    {layout === 'centered' && (
+      <div class="footer-centered-layout">
+        {footerLogo && (
+          <a href={createLink(footerLogo.href || '/')} class="footer-logo-link mb-4">
+            <img
+              src={footerLogo.src}
+              alt={footerLogo.alt || config.metadata.name}
+              height={footerLogo.height || 32}
+              class="footer-logo"
+            />
+          </a>
+        )}
+        {footer.tagline && (
+          <p class="footer-tagline text-center mb-6">{footer.tagline}</p>
+        )}
+
+        {hasLinks && (
+          <div class="footer-links-centered">
+            {footer.links.map((section) => (
+              <div class="footer-link-section-centered">
+                <h4 class="footer-section-title">{section.title}</h4>
+                <ul class="footer-link-list-centered">
+                  {section.items.map((item) => (
+                    <li>
+                      <a
+                        href={createLink(item.href)}
+                        class="footer-link"
+                        target={item.external ? '_blank' : undefined}
+                        rel={item.external ? 'noopener noreferrer' : undefined}
+                      >
+                        {item.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {socialEntries.length > 0 && (
+          <div class="footer-socials-centered">
+            {socialEntries.map(([platform, url]) => (
+              <a
+                href={platform === 'email' ? `mailto:${url}` : url}
+                class="footer-social-link"
+                title={platform.charAt(0).toUpperCase() + platform.slice(1)}
+                target={platform === 'email' ? undefined : '_blank'}
+                rel={platform === 'email' ? undefined : 'noopener noreferrer'}
+              >
+                <Icon name={socialIcons[platform] || 'lucide:link'} class="w-5 h-5" />
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
+    )}
+
+    {/* Bottom bar - always shown */}
+    <div class="footer-bottom">
+      <div class="footer-bottom-content">
+        <div class="footer-copyright">
+          <span>{copyrightText}</span>
+          {showBranding && (
+            <>
+              <span class="footer-separator">•</span>
+              <span>Built with <a href="https://github.com/Lito-docs/cli" class="footer-lito-link">Lito</a></span>
+            </>
+          )}
+          {showVersion && config.metadata.version && (
+            <>
+              <span class="footer-separator">•</span>
+              <span>v{config.metadata.version}</span>
+            </>
+          )}
         </div>
-        <div class="text-sm text-muted-foreground">
-          <p class="m-0">
-            <a href="https://github.com/Lito-docs/cli" class="text-foreground hover:text-foreground/80 transition-colors" title="View on GitHub">
-              GitHub
-            </a>
-          </p>
-        </div>
+
+        {hasBottomLinks && (
+          <div class="footer-bottom-links">
+            {footer.bottomLinks.map((link, index) => (
+              <>
+                {index > 0 && <span class="footer-separator">•</span>}
+                <a href={createLink(link.href)} class="footer-bottom-link">
+                  {link.label}
+                </a>
+              </>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   </div>
 </footer>
+
+<style>
+  .footer-container {
+    border-top: 1px solid var(--border);
+  }
+
+  /* Full Layout */
+  .footer-full-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+  }
+
+  @media (min-width: 768px) {
+    .footer-full-layout {
+      grid-template-columns: 1.5fr 2fr auto;
+      gap: 3rem;
+    }
+  }
+
+  /* Brand Section */
+  .footer-brand {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .footer-logo-link {
+    display: inline-flex;
+  }
+
+  .footer-logo {
+    height: 32px;
+    width: auto;
+  }
+
+  .footer-site-name {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--foreground);
+    text-decoration: none;
+  }
+
+  .footer-site-name:hover {
+    color: var(--primary-600);
+  }
+
+  .footer-tagline {
+    color: var(--muted-foreground);
+    font-size: 0.875rem;
+    margin: 0;
+    max-width: 280px;
+    line-height: 1.5;
+  }
+
+  /* Links Grid */
+  .footer-links-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+  }
+
+  @media (min-width: 640px) {
+    .footer-links-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .footer-links-grid {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+
+  .footer-link-section {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .footer-section-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--foreground);
+    margin-bottom: 1rem;
+  }
+
+  .footer-link-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+  }
+
+  .footer-link {
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+    text-decoration: none;
+    transition: color 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .footer-link:hover {
+    color: var(--foreground);
+  }
+
+  /* Social Links */
+  .footer-socials-mobile {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+  }
+
+  @media (min-width: 768px) {
+    .footer-socials-mobile {
+      display: none;
+    }
+  }
+
+  .footer-socials-desktop {
+    display: none;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-end;
+  }
+
+  @media (min-width: 768px) {
+    .footer-socials-desktop {
+      display: flex;
+      flex-direction: row;
+      gap: 0.75rem;
+    }
+  }
+
+  .footer-socials-inline {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .footer-socials-centered {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  .footer-social-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 0.5rem;
+    color: var(--muted-foreground);
+    background-color: var(--muted);
+    transition: all 0.2s ease;
+  }
+
+  .footer-social-link:hover {
+    color: var(--foreground);
+    background-color: var(--primary-100);
+  }
+
+  :global(.dark) .footer-social-link:hover {
+    background-color: var(--primary-900);
+  }
+
+  /* Compact Layout */
+  .footer-compact-layout {
+    text-align: center;
+  }
+
+  /* Centered Layout */
+  .footer-centered-layout {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 2rem;
+  }
+
+  .footer-links-centered {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 2rem;
+    margin-top: 1rem;
+  }
+
+  .footer-link-section-centered {
+    text-align: center;
+  }
+
+  .footer-link-list-centered {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  /* Bottom Bar */
+  .footer-bottom {
+    border-top: 1px solid var(--border);
+    padding-top: 1.5rem;
+  }
+
+  .footer-bottom-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+    text-align: center;
+  }
+
+  @media (min-width: 768px) {
+    .footer-bottom-content {
+      flex-direction: row;
+      justify-content: space-between;
+      text-align: left;
+    }
+  }
+
+  .footer-copyright {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+  }
+
+  @media (min-width: 768px) {
+    .footer-copyright {
+      justify-content: flex-start;
+    }
+  }
+
+  .footer-separator {
+    color: var(--border);
+  }
+
+  .footer-lito-link {
+    color: var(--foreground);
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  .footer-lito-link:hover {
+    color: var(--primary-600);
+  }
+
+  .footer-bottom-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  @media (min-width: 768px) {
+    .footer-bottom-links {
+      justify-content: flex-end;
+    }
+  }
+
+  .footer-bottom-link {
+    color: var(--muted-foreground);
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  .footer-bottom-link:hover {
+    color: var(--foreground);
+  }
+</style>

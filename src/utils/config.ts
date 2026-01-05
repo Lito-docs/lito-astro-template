@@ -65,8 +65,12 @@ export function getDefaultConfig(): DocsConfig {
             sidebar: [],
         },
         footer: {
+            layout: 'full',
+            showBranding: true,
+            showVersion: true,
             socials: {},
             links: [],
+            bottomLinks: [],
         },
         search: {
             enabled: false,

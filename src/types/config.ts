@@ -103,13 +103,41 @@ export interface SidebarItem {
 }
 
 export interface FooterConfig {
-    socials: Record<string, string>;
-    links: FooterSection[];
+    /** Footer logo configuration (uses branding logo if not specified) */
+    logo?: {
+        src: string;
+        alt?: string;
+        href?: string;
+        height?: number;
+    };
+    /** Company tagline or description displayed under the logo */
+    tagline?: string;
+    /** Custom copyright text. Use {year} placeholder for current year */
+    copyright?: string;
+    /** Show 'Built with Lito' branding in the footer (default: true) */
+    showBranding?: boolean;
+    /** Show the documentation version in the footer (default: true) */
+    showVersion?: boolean;
+    /** Footer layout variant: 'full', 'compact', or 'centered' */
+    layout?: 'full' | 'compact' | 'centered';
+    /** Social media links. Keys are platform names, values are URLs */
+    socials?: Record<string, string>;
+    /** Footer link sections organized in columns */
+    links?: FooterSection[];
+    /** Additional links shown in the bottom bar (e.g., Privacy Policy, Terms) */
+    bottomLinks?: FooterLink[];
 }
 
 export interface FooterSection {
     title: string;
-    items: Array<{ label: string; href: string }>;
+    items: FooterLink[];
+}
+
+export interface FooterLink {
+    label: string;
+    href: string;
+    /** Open in new tab */
+    external?: boolean;
 }
 
 export interface SearchConfig {
