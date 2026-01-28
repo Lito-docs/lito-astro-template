@@ -73,12 +73,6 @@ export default defineConfig({
         './src/components/mdx/Param.astro',
         './src/components/mdx/ResponseField.astro',
 
-        // Landing Page
-        './src/components/landing/DocsLayout.astro',
-        './src/components/landing/DocsHero.astro',
-        './src/components/landing/DocsFeatureGrid.astro',
-        './src/components/landing/DocsFeature.astro',
-
         // Changelog
         './src/components/mdx/Changelog.astro',
         './src/components/mdx/ChangelogEntry.astro',

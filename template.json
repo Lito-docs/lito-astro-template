@@ -1,10 +1,10 @@
 {
   "$schema": "../lito/src/schema/template-manifest.json",
-  "name": "lito-theme-default",
+  "name": "lito-astro-template",
   "version": "1.0.0",
-  "description": "The official default theme for Lito documentation sites. Professional, Mintlify-inspired design with full feature support.",
+  "description": "The official Astro template for Lito documentation sites. Professional, Mintlify-inspired design with full feature support.",
   "author": "Lito-docs",
-  "repository": "https://github.com/Lito-docs/template",
+  "repository": "https://github.com/Lito-docs/lito-astro-template",
   "coreSchemaVersion": "1.0.0",
   "extensions": {
     "footer": {

@@ -1,46 +1,20 @@
 ---
-import DocsLayout from '../components/landing/DocsLayout.astro';
-import DocsHero from '../components/landing/DocsHero.astro';
-import DocsFeatureGrid from '../components/landing/DocsFeatureGrid.astro';
-import DocsFeature from '../components/landing/DocsFeature.astro';
-import Footer from '../components/Footer.astro';
-import MinimalistLanding from '../components/MinimalistLanding.astro';
+// Landing page placeholder
+// This file is replaced by the CLI when custom landing is configured
+// When no custom landing is set, redirect to the first docs page
 import { getConfigFile, getNavigation } from '../utils/config';
-import { createLink } from '../utils/url';
 
 const config = await getConfigFile();
-const shouldRenderLanding = config.landing?.enabled ?? false;
+const navigation = await getNavigation();
 
-// Map config data to component props
-const heroConfig = config.landing?.hero;
-const primaryBtn = heroConfig?.cta?.find(c => c.variant === 'primary');
-const secondaryBtn = heroConfig?.cta?.find(c => c.variant === 'secondary');
+// Find the first docs page from navigation
+let firstDocsPage = '/introduction';
+if (navigation.sidebar && navigation.sidebar.length > 0) {
+  const firstGroup = navigation.sidebar[0];
+  if (firstGroup.items && firstGroup.items.length > 0) {
+    firstDocsPage = firstGroup.items[0].href || '/introduction';
+  }
+}
+
+return Astro.redirect(firstDocsPage);
 ---
-
-{shouldRenderLanding ? (
-    <DocsLayout title={config.metadata.name} description={config.metadata.description}>
-        {heroConfig && (
-            <DocsHero
-                title={heroConfig.title}
-                subtitle={heroConfig.subtitle}
-                version={heroConfig.version}
-                primaryCTA={primaryBtn ? { text: primaryBtn.label, link: primaryBtn.href } : undefined}
-                secondaryCTA={secondaryBtn ? { text: secondaryBtn.label, link: secondaryBtn.href } : undefined}
-            />
-        )}
-
-        {config.landing?.features && (
-            <DocsFeatureGrid title="Features">
-                {config.landing.features.map(feature => (
-                    <DocsFeature title={feature.title} icon={feature.icon}>
-                        {feature.description}
-                    </DocsFeature>
-                ))}
-            </DocsFeatureGrid>
-        )}
-        
-        <Footer />
-    </DocsLayout>
-) : (
-    <MinimalistLanding />
-)}
