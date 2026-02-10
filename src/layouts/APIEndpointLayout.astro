@@ -1,9 +1,9 @@
 ---
 /**
- * APIEndpointLayout - Two-column layout for individual API endpoint pages
+ * APIEndpointLayout - Mintlify-style two-column API endpoint layout
  *
- * Left side: Schema documentation (parameters, request body, responses)
- * Right side: Interactive API playground (sticky)
+ * Left side: Documentation (params, request body, responses, prose)
+ * Right side: Code examples (request/response snippets) + collapsible "Try it"
  *
  * Usage:
  * ---
@@ -14,8 +14,13 @@
  * ---
  */
 import Layout from './Layout.astro';
-import APIPlayground from '../components/mdx/APIPlayground.astro';
-import APIEndpoint from '../components/mdx/APIEndpoint.astro';
+import APICodePanel from '../components/api/APICodePanel.astro';
+import APITryIt from '../components/api/APITryIt.astro';
+import Footer from '../components/Footer.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import PrevNextNav from '../components/PrevNextNav.astro';
+import PageFeedback from '../components/PageFeedback.astro';
+import { getConfigFile } from '../utils/config';
 import '../styles/global.css';
 
 interface Props {
@@ -52,70 +57,175 @@ if (frontmatter?.api) {
     path = parts[0];
   }
 }
+
+// Highlight path parameters: {id} → styled span
+const pathSegments = path.split(/(\{[^}]+\})/g);
+
+// Auth badge label
+const authLabels: Record<string, string> = {
+  bearer: 'Bearer',
+  'api-key': 'API Key',
+  basic: 'Basic',
+};
+
+// Build breadcrumbs
+const config = await getConfigFile();
+const { pathname } = Astro.url;
+const currentSlug = pathname.replace(/^\/|\/$/g, '');
+
+const breadcrumbs: Array<{ name: string; href?: string }> = [
+  { name: 'Docs', href: '/' }
+];
+
+let found = false;
+for (const group of config.navigation.sidebar) {
+  if (found) break;
+  if (group.items) {
+    for (const item of group.items) {
+      const itemPath = item.href || item.slug || '';
+      const itemSlug = itemPath.replace(/^\/|\/$/g, '');
+      if (itemSlug === currentSlug) {
+        breadcrumbs.push({ name: group.label });
+        breadcrumbs.push({ name: item.label, href: itemPath });
+        found = true;
+        break;
+      }
+    }
+  }
+}
+
+if (!found && currentSlug) {
+  const segments = currentSlug.split('/');
+  segments.forEach((segment, index) => {
+    const isLast = index === segments.length - 1;
+    breadcrumbs.push({
+      name: segment.charAt(0).toUpperCase() + segment.slice(1),
+      href: isLast ? undefined : `/${segments.slice(0, index + 1).join('/')}`,
+    });
+  });
+}
 ---
 
-<Layout title={title} description={description}>
-  <main class="api-endpoint-main">
+<Layout title={title} description={description} breadcrumbs={breadcrumbs}>
+  <main class="main-content pt-16" data-api-layout>
     <div class="api-endpoint-container">
       <!-- Left Column: Documentation -->
       <div class="api-docs-column">
         <div class="api-docs-content">
+          <Breadcrumbs />
+
           <!-- Endpoint Header -->
           <div class="endpoint-header">
+            <div class="endpoint-header-top">
+              <span class={`method-badge method-${method.toLowerCase()}`}>{method}</span>
+              <code class="endpoint-path-inline">
+                {pathSegments.map(seg =>
+                  seg.startsWith('{') ? (
+                    <span class="path-param">{seg}</span>
+                  ) : (
+                    <span>{seg}</span>
+                  )
+                )}
+              </code>
+              {auth !== 'none' && (
+                <span class="auth-badge">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                  {authLabels[auth]}
+                </span>
+              )}
+              {deprecated && (
+                <span class="deprecated-badge">Deprecated</span>
+              )}
+            </div>
             <h1 class="endpoint-title">{title}</h1>
-            {deprecated && (
-              <span class="deprecated-badge">Deprecated</span>
+            {description && (
+              <p class="endpoint-description">{description}</p>
             )}
-          </div>
-
-          {description && (
-            <p class="endpoint-description">{description}</p>
-          )}
-
-          <!-- Method + Path Display -->
-          <div class="endpoint-path-display">
-            <span class={`method-badge method-${method.toLowerCase()}`}>
-              {method}
-            </span>
-            <code class="endpoint-path">{path}</code>
           </div>
 
           <!-- Documentation Content (slot) -->
           <div class="api-documentation prose prose-slate dark:prose-invert max-w-none">
             <slot />
           </div>
+
+          <PageFeedback />
+          <PrevNextNav />
         </div>
       </div>
 
-      <!-- Right Column: Playground (Sticky) -->
-      <div class="api-playground-column">
-        <div class="playground-sticky-wrapper">
-          <div class="playground-header">
-            <span class="playground-title">Try it out</span>
-          </div>
-          <APIPlayground
-            method={method}
-            path={path}
-            baseUrl={baseUrl}
-            auth={auth}
-          />
+      <!-- Right Column: Code Examples + Try It -->
+      <div class="api-panel-column">
+        <div class="panel-sticky-wrapper">
+          <APICodePanel method={method} path={path} baseUrl={baseUrl} auth={auth} />
+          <APITryIt method={method} path={path} baseUrl={baseUrl} auth={auth} />
         </div>
       </div>
     </div>
+    <Footer />
   </main>
 </Layout>
+
+<script>
+  /**
+   * Relocate <RequestExample> and <ResponseExample> content from the
+   * left-column slot into the right-side APICodePanel.
+   */
+  function initAPILayout() {
+    const layout = document.querySelector('[data-api-layout]');
+    if (!layout) return;
+
+    const panel = layout.querySelector('.api-code-panel');
+    if (!panel) return;
+
+    // Relocate request examples
+    const requestSource = layout.querySelector('[data-api-panel="request"]');
+    if (requestSource && requestSource.children.length > 0) {
+      const manualSlot = panel.querySelector('[data-manual-request]') as HTMLElement | null;
+      const autoSlot = panel.querySelector('[data-auto-request]') as HTMLElement | null;
+      if (manualSlot && autoSlot) {
+        // Move content to manual slot
+        while (requestSource.firstChild) {
+          manualSlot.appendChild(requestSource.firstChild);
+        }
+        manualSlot.style.display = '';
+        autoSlot.style.display = 'none';
+      }
+    }
+
+    // Relocate response examples
+    const responseSource = layout.querySelector('[data-api-panel="response"]');
+    if (responseSource && responseSource.children.length > 0) {
+      const manualSlot = panel.querySelector('[data-manual-response]') as HTMLElement | null;
+      if (manualSlot) {
+        // Clear placeholder and move content
+        manualSlot.innerHTML = '';
+        while (responseSource.firstChild) {
+          manualSlot.appendChild(responseSource.firstChild);
+        }
+      }
+    }
+  }
+
+  initAPILayout();
+  document.addEventListener('astro:page-load', initAPILayout);
+</script>
 
 <style>
   @reference '../styles/global.css';
 
-  .api-endpoint-main {
-    @apply min-h-screen flex flex-col flex-1 pt-16;
-    margin-left: 0;
+  [data-api-layout] {
+    margin-right: 0 !important;
   }
 
-  @media (min-width: 768px) {
-    .api-endpoint-main {
-      margin-left: 18rem; /* Match global sidebar width */
+  /* Override main-content margin for API layout on large screens */
+  @media (min-width: 1024px) {
+    [data-api-layout] {
+      margin-right: 0 !important;
+      max-width: none;
+      align-items: stretch;
     }
   }
 
@@ -125,118 +235,90 @@ if (frontmatter?.api) {
 
   /* Left Column - Documentation */
   .api-docs-column {
-    @apply flex-1 min-w-0 overflow-y-auto;
-    @apply border-r border-border;
+    @apply flex-1 min-w-0;
   }
 
   .api-docs-content {
     @apply p-6 lg:p-8 xl:p-10 max-w-3xl;
   }
 
+  /* Endpoint Header */
   .endpoint-header {
-    @apply flex items-center gap-3 mb-4;
+    @apply mb-8;
+  }
+
+  .endpoint-header-top {
+    @apply flex items-center gap-2.5 flex-wrap mb-3;
   }
 
   .endpoint-title {
-    @apply text-2xl lg:text-3xl font-bold text-foreground m-0;
-  }
-
-  .deprecated-badge {
-    @apply px-2 py-1 text-xs font-semibold uppercase;
-    @apply bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-md;
+    @apply text-2xl lg:text-3xl font-bold text-foreground m-0 mb-2;
   }
 
   .endpoint-description {
-    @apply text-base lg:text-lg text-muted-foreground mb-6 leading-relaxed;
+    @apply text-base text-muted-foreground leading-relaxed m-0;
   }
 
-  .endpoint-path-display {
-    @apply flex items-center gap-3 p-4 rounded-lg mb-8;
-    @apply bg-muted/50 border border-border;
-  }
-
+  /* Method Badge */
   .method-badge {
-    @apply px-3 py-1.5 text-sm font-bold uppercase rounded-md;
-    @apply shrink-0;
+    @apply px-2.5 py-1 text-xs font-bold uppercase rounded-md shrink-0 tracking-wide;
   }
 
-  .method-get {
-    @apply bg-emerald-500/15 text-emerald-600 dark:text-emerald-400;
+  .method-get { @apply bg-emerald-500/15 text-emerald-600; }
+  :global(.dark) .method-get { @apply text-emerald-400; }
+  .method-post { @apply bg-blue-500/15 text-blue-600; }
+  :global(.dark) .method-post { @apply text-blue-400; }
+  .method-put { @apply bg-amber-500/15 text-amber-600; }
+  :global(.dark) .method-put { @apply text-amber-400; }
+  .method-patch { @apply bg-orange-500/15 text-orange-600; }
+  :global(.dark) .method-patch { @apply text-orange-400; }
+  .method-delete { @apply bg-red-500/15 text-red-600; }
+  :global(.dark) .method-delete { @apply text-red-400; }
+
+  /* Inline path display */
+  .endpoint-path-inline {
+    @apply text-sm font-mono text-foreground;
   }
 
-  .method-post {
-    @apply bg-blue-500/15 text-blue-600 dark:text-blue-400;
+  .path-param {
+    @apply text-primary-600;
+    font-weight: 600;
   }
 
-  .method-put {
-    @apply bg-amber-500/15 text-amber-600 dark:text-amber-400;
+  :global(.dark) .path-param {
+    @apply text-primary-400;
   }
 
-  .method-patch {
-    @apply bg-orange-500/15 text-orange-600 dark:text-orange-400;
+  /* Auth badge */
+  .auth-badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-md;
+    @apply bg-amber-500/10 text-amber-600;
   }
 
-  .method-delete {
-    @apply bg-red-500/15 text-red-600 dark:text-red-400;
+  :global(.dark) .auth-badge {
+    @apply text-amber-400;
   }
 
-  .endpoint-path {
-    @apply text-sm lg:text-base font-mono text-foreground break-all;
+  .deprecated-badge {
+    @apply px-2 py-0.5 text-xs font-semibold uppercase;
+    @apply bg-red-500/10 text-red-600 rounded-md;
+  }
+
+  :global(.dark) .deprecated-badge {
+    @apply text-red-400;
   }
 
   .api-documentation {
     @apply space-y-6;
   }
 
-  /* Right Column - Playground */
-  .api-playground-column {
+  /* Right Column - Code Panel */
+  .api-panel-column {
     @apply w-full xl:w-[480px] 2xl:w-[520px] shrink-0;
-    @apply bg-muted/30 border-t xl:border-t-0 xl:border-l border-border;
   }
 
-  .playground-sticky-wrapper {
-    @apply p-4 lg:p-6;
-    @apply xl:sticky xl:top-20 xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto;
-  }
-
-  .playground-header {
-    @apply mb-4 pb-3 border-b border-border;
-  }
-
-  .playground-title {
-    @apply text-sm font-semibold uppercase tracking-wider text-muted-foreground;
-  }
-
-  /* Responsive adjustments */
-  @media (max-width: 1279px) {
-    .api-docs-column {
-      @apply border-r-0;
-    }
-
-    .api-playground-column {
-      max-height: none;
-    }
-
-    .playground-sticky-wrapper {
-      position: static;
-      max-height: none;
-    }
-  }
-
-  /* Custom scrollbar for playground */
-  .playground-sticky-wrapper::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  .playground-sticky-wrapper::-webkit-scrollbar-track {
-    @apply bg-transparent;
-  }
-
-  .playground-sticky-wrapper::-webkit-scrollbar-thumb {
-    @apply bg-border rounded-full;
-  }
-
-  .playground-sticky-wrapper::-webkit-scrollbar-thumb:hover {
-    @apply bg-muted-foreground/50;
+  .panel-sticky-wrapper {
+    @apply p-4 lg:p-5;
+    @apply xl:sticky xl:top-20;
   }
 </style>

@@ -103,7 +103,8 @@
                   "match": {
                     "type": "string",
                     "description": "URL pattern to match for active state (e.g., '/docs' matches /docs/*)"
-                  }
+                  },
+                  "groups": { "type": "array", "items": { "type": "string" }, "description": "Sidebar group labels to match for active state" }
                 },
                 "required": ["label", "href"]
               }
@@ -144,6 +145,22 @@
                 "type": { "type": "string" }
               }
             }
+          }
+        },
+        "anchors": {
+          "type": "array",
+          "description": "Bottom sidebar anchor links for switching between documentation sections",
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": { "type": "string", "description": "Display label for the anchor" },
+              "href": { "type": "string", "description": "Link URL or path" },
+              "icon": { "type": "string", "description": "Iconify icon name (e.g., 'lucide:book')" },
+              "color": { "type": "string", "description": "Custom color for the icon/active state" },
+              "external": { "type": "boolean", "default": false, "description": "Open link in new tab" },
+              "groups": { "type": "array", "items": { "type": "string" }, "description": "Sidebar group labels to show when this anchor is active" }
+            },
+            "required": ["label", "href"]
           }
         },
         "sidebar": {

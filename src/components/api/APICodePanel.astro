@@ -1,0 +1,142 @@
+---
+/**
+ * APICodePanel - Right-side code examples panel for API endpoint pages
+ * Uses the existing Tabs/Tab components for language switching.
+ * Auto-generates code from frontmatter when no manual examples are provided.
+ */
+import { generateCode } from '../../utils/api-codegen';
+import Tabs from '../mdx/Tabs.astro';
+import Tab from '../mdx/Tab.astro';
+
+interface Props {
+  method: string;
+  path: string;
+  baseUrl: string;
+  auth: string;
+}
+
+const { method, path, baseUrl, auth } = Astro.props;
+
+// Build default headers
+const defaultHeaders: Record<string, string> = {
+  'Content-Type': 'application/json',
+};
+if (auth === 'bearer') {
+  defaultHeaders['Authorization'] = 'Bearer <token>';
+} else if (auth === 'api-key') {
+  defaultHeaders['X-API-Key'] = '<api-key>';
+}
+
+// Pre-generate code snippets for each language
+const languages = [
+  { id: 'curl', label: 'cURL' },
+  { id: 'javascript', label: 'JavaScript' },
+  { id: 'python', label: 'Python' },
+  { id: 'go', label: 'Go' },
+];
+
+const codeSnippets = Object.fromEntries(
+  languages.map(lang => [
+    lang.id,
+    generateCode(lang.id, { method: method as any, path, baseUrl, headers: defaultHeaders }),
+  ])
+);
+
+const panelId = `api-code-panel-${Math.random().toString(36).slice(2, 9)}`;
+---
+
+<div class="api-code-panel not-prose" id={panelId} data-panel-id={panelId}>
+  <!-- Request Section -->
+  <div class="code-panel-section" data-code-section="request">
+    <div class="code-panel-label">Request</div>
+
+    <!-- Auto-generated code (shown when no manual RequestExample) -->
+    <div data-auto-request>
+      <Tabs items={languages.map(l => l.label)}>
+        {languages.map(lang => (
+          <Tab title={lang.label}>
+            <pre class="api-code-pre"><code>{codeSnippets[lang.id]}</code></pre>
+          </Tab>
+        ))}
+      </Tabs>
+    </div>
+
+    <!-- Manual request examples (injected by layout JS) -->
+    <div class="code-panel-manual" data-manual-request style="display:none;"></div>
+  </div>
+
+  <!-- Response Section -->
+  <div class="code-panel-section" data-code-section="response">
+    <div class="code-panel-label">Response</div>
+    <!-- Manual response examples (injected by layout JS) -->
+    <div class="code-panel-manual" data-manual-response>
+      <div class="code-panel-placeholder">
+        <span class="placeholder-text">Send a request to see the response</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  @reference "../../styles/global.css";
+
+  .api-code-panel {
+    @apply overflow-hidden;
+  }
+
+  /* Tighten the embedded Tabs inside the code panel */
+  .api-code-panel :global(.tabs-container) {
+    @apply my-0 rounded-lg;
+  }
+
+  .api-code-panel :global(.tabs-content) {
+    @apply p-0;
+  }
+
+  .code-panel-section + .code-panel-section {
+    @apply mt-4;
+  }
+
+  .code-panel-label {
+    @apply text-xs font-semibold uppercase tracking-wider mb-2;
+    color: var(--muted-foreground);
+  }
+
+  .api-code-pre {
+    @apply p-4 text-sm overflow-x-auto m-0 rounded-b-lg;
+    font-family: var(--font-mono);
+    color: var(--foreground);
+    background: var(--card);
+    max-height: 320px;
+  }
+
+  .api-code-pre code {
+    color: inherit;
+    font-family: inherit;
+    background: transparent;
+  }
+
+  .code-panel-placeholder {
+    @apply flex items-center justify-center py-8 rounded-lg;
+    background: var(--card);
+    border: 1px solid var(--border);
+  }
+
+  .placeholder-text {
+    @apply text-xs;
+    color: var(--muted-foreground);
+  }
+
+  /* Manual examples — override expressive-code styling inside the panel */
+  .code-panel-manual :global(.expressive-code) {
+    margin: 0 !important;
+  }
+
+  .code-panel-manual :global(.expressive-code .frame) {
+    border-radius: var(--radius-lg) !important;
+  }
+
+  .code-panel-manual :global(pre) {
+    margin: 0 !important;
+  }
+</style>

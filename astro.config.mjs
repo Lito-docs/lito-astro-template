@@ -73,6 +73,8 @@ export default defineConfig({
         './src/components/mdx/ParamTable.astro',
         './src/components/mdx/Param.astro',
         './src/components/mdx/ResponseField.astro',
+        './src/components/mdx/RequestExample.astro',
+        './src/components/mdx/ResponseExample.astro',
 
         // Changelog
         './src/components/mdx/Changelog.astro',
@@ -90,13 +92,27 @@ export default defineConfig({
       defaultProps: {
         wrap: true,
       },
-      themes: ['dracula', 'github-light'],
+      themes: ['github-dark', 'github-light'],
+      themeCssSelector: (theme) => (theme.type === 'dark' ? '.dark' : '.light'),
+      styleOverrides: {
+        borderColor: 'var(--border)',
+        borderRadius: 'var(--radius-lg)',
+        borderWidth: '1px',
+        codeFontFamily: 'var(--font-mono)',
+        frames: {
+          shadowColor: 'transparent',
+        },
+      },
     }),
     mdx(),
   ],
 
   markdown: {
     remarkPlugins: [remarkGithubAlerts, remarkLastModified],
+  },
+
+  server: {
+    allowedHosts: true,
   },
 
   vite: {

@@ -45,9 +45,26 @@ export interface LogoConfig {
     href?: string;
 }
 
+export interface SidebarAnchor {
+    /** Display label */
+    label: string;
+    /** Link href */
+    href: string;
+    /** Iconify icon name (e.g., "lucide:book") */
+    icon?: string;
+    /** Custom color for the icon/active state */
+    color?: string;
+    /** Whether this link opens in a new tab */
+    external?: boolean;
+    /** Sidebar group labels to show when this anchor is active */
+    groups?: string[];
+}
+
 export interface NavigationConfig {
     navbar?: NavbarConfig;
     sidebar?: SidebarGroup[];
+    /** Bottom sidebar anchor links for section switching */
+    anchors?: SidebarAnchor[];
 }
 
 export interface NavbarConfig {
@@ -81,6 +98,8 @@ export interface NavTab {
     href: string;
     icon?: string;
     match?: string;
+    /** Sidebar group labels to match for active state */
+    groups?: string[];
 }
 
 export interface NavSocial {

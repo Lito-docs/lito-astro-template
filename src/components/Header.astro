@@ -26,10 +26,19 @@ const hasTabs = navbar.tabs && navbar.tabs.length > 0;
     <!-- Logo -->
     <div class="flex items-center gap-4">
       <a href={createLink(config.branding.logo.href)} class="logo-link">
-        <Icon name="lucide:book-open" size={22} class="text-primary-500" />
-        <h1 class="logo-text hidden sm:block">
-          {config.metadata.name}
-        </h1>
+        {config.branding.logo.light ? (
+          <>
+            <img src={config.branding.logo.light} alt={config.metadata.name} class="logo-img logo-img-light" height="28" />
+            <img src={config.branding.logo.dark || config.branding.logo.light} alt={config.metadata.name} class="logo-img logo-img-dark" height="28" />
+          </>
+        ) : (
+          <>
+            <Icon name="lucide:book-open" size={22} class="text-primary-500" />
+            <h1 class="logo-text hidden sm:block">
+              {config.metadata.name}
+            </h1>
+          </>
+        )}
       </a>
     </div>
 
@@ -119,6 +128,23 @@ const hasTabs = navbar.tabs && navbar.tabs.length > 0;
 
   .logo-text {
     @apply text-base font-semibold text-foreground m-0 tracking-tight;
+  }
+
+  .logo-img {
+    height: 28px;
+    width: auto;
+  }
+
+  .logo-img-dark {
+    display: none;
+  }
+
+  :root.dark .logo-img-light {
+    display: none;
+  }
+
+  :root.dark .logo-img-dark {
+    display: block;
   }
 
   .nav-link {

@@ -1,5 +1,7 @@
 ---
-import type { NavTab } from '../types/config';
+import type { NavTab, SidebarItem } from '../types/config';
+import { getConfigFile, getLocalizedSidebar } from '../utils/config';
+import { getI18nConfig, getLocaleFromPath } from '../utils/i18n';
 import { createLink } from '../utils/url';
 import Icon from './Icon.astro';
 
@@ -9,10 +11,31 @@ interface Props {
 
 const { tabs } = Astro.props;
 const currentPath = Astro.url.pathname;
+const normalizedPath = currentPath.replace(/\/$/, '') || '/';
+
+// Load sidebar for group-membership matching
+const i18nConfig = await getI18nConfig();
+const currentLocale = getLocaleFromPath(currentPath, i18nConfig.locales) || i18nConfig.defaultLocale;
+const sidebarItems = getLocalizedSidebar(currentLocale, i18nConfig.defaultLocale);
+
+function collectHrefs(items: SidebarItem[]): string[] {
+  const hrefs: string[] = [];
+  for (const item of items) {
+    if (item.href) hrefs.push(item.href.replace(/\/$/, '') || '/');
+    if (item.slug) hrefs.push(`/${item.slug}`.replace(/\/$/, '') || '/');
+    if (item.items) hrefs.push(...collectHrefs(item.items));
+  }
+  return hrefs;
+}
 
 const isTabActive = (tab: NavTab) => {
+  // If tab has groups, check if current page belongs to any of those groups
+  if (tab.groups?.length) {
+    const groupItems = sidebarItems.filter((g: any) => tab.groups!.includes(g.label));
+    return groupItems.some((g: any) => collectHrefs(g.items || []).includes(normalizedPath));
+  }
+  // Fallback: URL prefix matching
   const match = tab.match || tab.href;
-  const normalizedPath = currentPath.replace(/\/$/, '') || '/';
   const normalizedMatch = match.replace(/\/$/, '') || '/';
   return normalizedPath === normalizedMatch || normalizedPath.startsWith(normalizedMatch + '/');
 };

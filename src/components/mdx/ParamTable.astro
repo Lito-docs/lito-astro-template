@@ -71,7 +71,7 @@ const tableId = `param-table-${Math.random().toString(36).slice(2, 9)}`;
 
   .param-table-header {
     @apply px-4 py-3 border-b border-border;
-    background: linear-gradient(to right, var(--muted), transparent);
+    @apply bg-muted/50;
   }
 
   .param-table-header.expandable {

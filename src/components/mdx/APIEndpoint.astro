@@ -85,17 +85,7 @@ const formattedPath = path.replace(/\{([^}]+)\}/g, '<span class="path-param">{$1
 
   .api-endpoint {
     @apply my-6 rounded-xl border border-border bg-card overflow-hidden;
-    box-shadow: var(--shadow-sm);
-    transition: all 200ms ease;
-  }
-
-  .api-endpoint:hover {
-    box-shadow: var(--shadow-md);
-    border-color: var(--primary-200);
-  }
-
-  :global(.dark) .api-endpoint:hover {
-    border-color: var(--primary-400);
+    box-shadow: var(--shadow-xs);
   }
 
   .api-endpoint.deprecated {
@@ -109,7 +99,7 @@ const formattedPath = path.replace(/\{([^}]+)\}/g, '<span class="path-param">{$1
   .endpoint-header {
     @apply flex items-center justify-between gap-4 px-5 py-4;
     @apply border-b border-border;
-    background: linear-gradient(to right, var(--muted), transparent);
+    @apply bg-muted/50;
   }
 
   .endpoint-method-path {

@@ -226,14 +226,14 @@ const defaultHeadersJson = JSON.stringify(defaultHeaders);
 
   .api-playground {
     @apply my-6 rounded-xl border border-border bg-card overflow-hidden;
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-sm);
   }
 
   /* Header */
   .playground-header {
     @apply flex items-center gap-3 p-4 border-b border-border;
     @apply flex-wrap;
-    background: linear-gradient(to right, var(--muted), transparent);
+    @apply bg-muted/50;
   }
 
   .playground-url {

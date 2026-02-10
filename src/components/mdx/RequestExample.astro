@@ -1,0 +1,29 @@
+---
+/**
+ * RequestExample - Wrapper for API request code examples in MDX
+ * Content inside is relocated to the right panel by the API layout's client script.
+ *
+ * Usage in MDX:
+ * <RequestExample>
+ * ```bash title="cURL"
+ * curl -X GET https://api.example.com/users
+ * ```
+ * ```javascript title="JavaScript"
+ * const res = await fetch("https://api.example.com/users");
+ * ```
+ * </RequestExample>
+ */
+---
+
+<div data-api-panel="request" class="api-panel-source">
+  <slot />
+</div>
+
+<style>
+  @reference "../../styles/global.css";
+
+  /* Hidden in the left column — relocated to right panel by JS */
+  .api-panel-source {
+    display: none;
+  }
+</style>

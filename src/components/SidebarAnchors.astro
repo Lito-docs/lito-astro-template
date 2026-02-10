@@ -1,0 +1,60 @@
+---
+/**
+ * SidebarAnchors - Bottom sidebar anchor links for section switching
+ * Mintlify-style quick navigation between docs sections (Docs, API Reference, Guides, etc.)
+ */
+import type { SidebarAnchor } from '../types/config';
+import Icon from './Icon.astro';
+
+interface Props {
+  anchors: SidebarAnchor[];
+  currentPath: string;
+  activeAnchorLabel?: string;
+}
+
+const { anchors, currentPath, activeAnchorLabel } = Astro.props;
+
+const normalizedPath = currentPath.replace(/\/$/, '') || '/';
+
+function isActive(anchor: SidebarAnchor): boolean {
+  // Use parent-determined active anchor if available
+  if (activeAnchorLabel) {
+    return anchor.label === activeAnchorLabel;
+  }
+  // Fallback: URL prefix matching
+  const normalizedHref = anchor.href.replace(/\/$/, '') || '/';
+  return normalizedPath === normalizedHref || normalizedPath.startsWith(normalizedHref + '/');
+}
+---
+
+{anchors.length > 0 && (
+  <div class="sidebar-anchors">
+    {anchors.map((anchor) => {
+      const active = isActive(anchor);
+      return (
+        <a
+          href={anchor.href}
+          class:list={['sidebar-anchor', { 'sidebar-anchor-active': active }]}
+          {...(anchor.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+          style={anchor.color && active ? `--anchor-color: ${anchor.color}` : undefined}
+        >
+          <span class="sidebar-anchor-inner">
+            {anchor.icon && (
+              <span class="sidebar-anchor-icon" style={anchor.color ? `color: ${anchor.color}` : undefined}>
+                <Icon name={anchor.icon} size={16} />
+              </span>
+            )}
+            <span class="sidebar-anchor-label">{anchor.label}</span>
+          </span>
+          {anchor.external && (
+            <svg class="sidebar-anchor-external" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+              <polyline points="15 3 21 3 21 9" />
+              <line x1="10" y1="14" x2="21" y2="3" />
+            </svg>
+          )}
+        </a>
+      );
+    })}
+  </div>
+)}

@@ -76,7 +76,7 @@ if (!found && currentSlug) {
       <VersionBanner />
       <slot />
       <div class="article-footer-meta">
-        <LastUpdated frontmatter={frontmatter} />
+        <LastUpdated frontmatter={frontmatter as Record<string, unknown>} />
         <EditPageLink sourceFile={sourceFile} />
       </div>
       <PageFeedback />

@@ -116,10 +116,13 @@ const hasItemsProp = Array.isArray(items) && items.length > 0;
       const panels = container.querySelectorAll(".tab-panel");
 
       // Check if we need to build tabs from Tab children
+      // Skip if static buttons already exist (from items prop)
+      const hasStaticButtons = staticHeader && staticHeader.querySelectorAll('[role="tab"]').length > 0;
       if (
         dynamicHeader &&
         panels.length > 0 &&
-        !dynamicHeader.hasChildNodes()
+        !dynamicHeader.hasChildNodes() &&
+        !hasStaticButtons
       ) {
         // Extract titles from Tab children
         panels.forEach((panel, index) => {
@@ -138,29 +141,82 @@ const hasItemsProp = Array.isArray(items) && items.length > 0;
 
       const buttons = container.querySelectorAll('[role="tab"]');
 
-      // Initialize - show only the default tab
-      panels.forEach((panel, index) => {
-        (panel as HTMLElement).style.display =
-          index === defaultIndex ? "block" : "none";
+      // Get tab labels for label-based persistence
+      const tabLabels = Array.from(buttons).map(
+        (btn) => btn.textContent?.trim() || "",
+      );
+
+      // Determine initial active index: check sessionStorage for a saved label
+      let activeIndex = defaultIndex;
+      try {
+        const saved = JSON.parse(
+          sessionStorage.getItem("lito-tabs") || "{}",
+        );
+        const match = tabLabels.findIndex((label) => saved[label]);
+        if (match >= 0) activeIndex = match;
+      } catch {}
+
+      // Initialize - show active tab
+      buttons.forEach((btn, i) => {
+        btn.classList.toggle("active", i === activeIndex);
+        btn.setAttribute("aria-selected", String(i === activeIndex));
       });
+      panels.forEach((panel, i) => {
+        (panel as HTMLElement).style.display =
+          i === activeIndex ? "block" : "none";
+      });
+
+      function selectTab(index: number) {
+        buttons.forEach((btn, i) => {
+          btn.classList.toggle("active", i === index);
+          btn.setAttribute("aria-selected", String(i === index));
+        });
+        panels.forEach((panel, i) => {
+          (panel as HTMLElement).style.display =
+            i === index ? "block" : "none";
+        });
+
+        // Persist by label
+        const label = tabLabels[index];
+        if (label) {
+          try {
+            const saved = JSON.parse(
+              sessionStorage.getItem("lito-tabs") || "{}",
+            );
+            // Clear other labels in this group, set selected
+            tabLabels.forEach((l) => delete saved[l]);
+            saved[label] = true;
+            sessionStorage.setItem("lito-tabs", JSON.stringify(saved));
+          } catch {}
+
+          // Sync other tab groups on the same page that share this label
+          document.querySelectorAll(".tabs-container").forEach((other) => {
+            if (other === container) return;
+            const otherButtons = other.querySelectorAll('[role="tab"]');
+            const otherPanels = other.querySelectorAll(".tab-panel");
+            const matchIdx = Array.from(otherButtons).findIndex(
+              (btn) => btn.textContent?.trim() === label,
+            );
+            if (matchIdx >= 0) {
+              otherButtons.forEach((btn, i) => {
+                btn.classList.toggle("active", i === matchIdx);
+                btn.setAttribute("aria-selected", String(i === matchIdx));
+              });
+              otherPanels.forEach((panel, i) => {
+                (panel as HTMLElement).style.display =
+                  i === matchIdx ? "block" : "none";
+              });
+            }
+          });
+        }
+      }
 
       buttons.forEach((button) => {
         button.addEventListener("click", () => {
           const index = parseInt(
             (button as HTMLElement).dataset.tabIndex || "0",
           );
-
-          // Update buttons
-          buttons.forEach((btn, i) => {
-            btn.classList.toggle("active", i === index);
-            btn.setAttribute("aria-selected", String(i === index));
-          });
-
-          // Update panels
-          panels.forEach((panel, i) => {
-            (panel as HTMLElement).style.display =
-              i === index ? "block" : "none";
-          });
+          selectTab(index);
         });
       });
     });

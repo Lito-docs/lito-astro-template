@@ -4,6 +4,7 @@ import { getI18nConfig, getLocaleFromPath } from "../utils/i18n";
 import { getVersionFromPath, isDefaultVersion, type VersioningConfig } from "../utils/versioning";
 import type { SidebarGroup as SidebarGroupType, SidebarItem } from "../types/config";
 import SidebarGroup from "./SidebarGroup.astro";
+import SidebarAnchors from "./SidebarAnchors.astro";
 import VersionSwitcher from "./VersionSwitcher.astro";
 import LanguageSwitcher from "./LanguageSwitcher.astro";
 import Icon from "./Icon.astro";
@@ -75,6 +76,35 @@ function filterSidebarGroups(groups: SidebarGroupType[]): SidebarGroupType[] {
 }
 
 const filteredSidebarItems = filterSidebarGroups(sidebarItems);
+const anchors = config.navigation.anchors || [];
+
+// Collect all hrefs from sidebar items (recursively for nested items)
+function collectHrefs(items: SidebarItem[]): string[] {
+  const hrefs: string[] = [];
+  for (const item of items) {
+    if (item.href) hrefs.push(item.href.replace(/\/$/, '') || '/');
+    if (item.slug) hrefs.push(`/${item.slug}`.replace(/\/$/, '') || '/');
+    if (item.items) hrefs.push(...collectHrefs(item.items));
+  }
+  return hrefs;
+}
+
+// Determine active anchor and filter sidebar groups by anchor's groups
+const normalizedPath = Astro.url.pathname.replace(/\/$/, '') || '/';
+const activeAnchor = anchors.find((a) => {
+  // If anchor has groups, check if current page belongs to any of those groups
+  if (a.groups?.length) {
+    const groupItems = filteredSidebarItems.filter(g => a.groups!.includes(g.label));
+    return groupItems.some(g => collectHrefs(g.items).includes(normalizedPath));
+  }
+  // Fallback: URL prefix matching for anchors without groups
+  const normalizedHref = a.href.replace(/\/$/, '') || '/';
+  return normalizedPath === normalizedHref || normalizedPath.startsWith(normalizedHref + '/');
+});
+
+const visibleSidebarItems = activeAnchor?.groups?.length
+  ? filteredSidebarItems.filter(g => activeAnchor.groups!.includes(g.label))
+  : filteredSidebarItems;
 
 // For localized content, we need to adjust hrefs to include locale prefix
 // Also adds version prefix when viewing a non-default version
@@ -108,11 +138,16 @@ const localizeHref = (href: string) => {
 
   <nav class="px-2 mt-2 pb-6 space-y-6 scrollbar-hide" id="sidebar-nav-scroll">
     {
-      filteredSidebarItems.map((group: any) => (
+      visibleSidebarItems.map((group: any) => (
         <SidebarGroup group={group} currentPath={currentPath} localizeHref={localizeHref} />
       ))
     }
   </nav>
+
+  <!-- Sidebar anchors -->
+  {anchors.length > 0 && (
+    <SidebarAnchors anchors={anchors} currentPath={currentPath} activeAnchorLabel={activeAnchor?.label} />
+  )}
 
   <!-- Social links -->
   {(social?.twitter || social?.discord) && (

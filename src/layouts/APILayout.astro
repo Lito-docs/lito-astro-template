@@ -1,6 +1,11 @@
 ---
 import Layout from './Layout.astro';
 import APIPlayground from '../components/mdx/APIPlayground.astro';
+import Footer from '../components/Footer.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import PrevNextNav from '../components/PrevNextNav.astro';
+import PageFeedback from '../components/PageFeedback.astro';
+import { getConfigFile } from '../utils/config';
 import '../styles/global.css';
 
 interface Props {
@@ -31,50 +36,84 @@ if (frontmatter?.api) {
     path = parts[0];
   }
 }
+
+// Build breadcrumbs (matching DocLayout pattern)
+const config = await getConfigFile();
+const { pathname } = Astro.url;
+const currentSlug = pathname.replace(/^\/|\/$/g, '');
+
+const breadcrumbs: Array<{ name: string; href?: string }> = [
+  { name: 'Docs', href: '/' }
+];
+
+let found = false;
+for (const group of config.navigation.sidebar) {
+  if (found) break;
+  if (group.items) {
+    for (const item of group.items) {
+      const itemPath = item.href || item.slug || '';
+      const itemSlug = itemPath.replace(/^\/|\/$/g, '');
+      if (itemSlug === currentSlug) {
+        breadcrumbs.push({ name: group.label });
+        breadcrumbs.push({ name: item.label, href: itemPath });
+        found = true;
+        break;
+      }
+    }
+  }
+}
+
+if (!found && currentSlug) {
+  const segments = currentSlug.split('/');
+  segments.forEach((segment, index) => {
+    const isLast = index === segments.length - 1;
+    breadcrumbs.push({
+      name: segment.charAt(0).toUpperCase() + segment.slice(1),
+      href: isLast ? undefined : `/${segments.slice(0, index + 1).join('/')}`,
+    });
+  });
+}
 ---
 
-<Layout title={title} description={description}>
-  <main class="api-main-content">
+<Layout title={title} description={description} breadcrumbs={breadcrumbs}>
+  <main class="main-content pt-16" data-api-layout>
     <div class="api-content-wrapper">
       <!-- Center: Documentation Prose -->
       <article class="api-prose">
+        <Breadcrumbs />
         <h1 class="text-3xl font-bold mb-4">{title}</h1>
         {description && <p class="text-lg text-muted-foreground mb-8">{description}</p>}
         <slot />
+        <PageFeedback />
+        <PrevNextNav />
       </article>
-      
+
       <!-- Right: API Playground/Examples -->
       <aside class="api-sidebar-right">
           <APIPlayground method={method} path={path} />
       </aside>
     </div>
+    <Footer />
   </main>
 </Layout>
 
 <style>
   @reference '../styles/global.css';
-  .api-main-content {
-    @apply min-h-screen flex flex-col flex-1 mt-24;
-    margin-left: 0;
+
+  [data-api-layout] {
+    margin-right: 0 !important;
   }
-  
-  @media (min-width: 768px) {
-    .api-main-content {
-      margin-left: 18rem; /* Match global sidebar width */
-    }
-  }
-  
+
   .api-content-wrapper {
     @apply flex flex-col lg:flex-row max-w-full;
   }
-  
+
   /* Center Column */
   .api-prose {
     @apply prose prose-slate dark:prose-invert max-w-none p-6 lg:p-10 flex-1;
-    /* Limit width to readable measure only if not constrained by flex */
-    min-width: 0; 
+    min-width: 0;
   }
-  
+
   /* Right Column */
   .api-sidebar-right {
     @apply w-full lg:w-[400px] xl:w-[450px] p-6 lg:p-8 bg-muted/10 border-l border-border min-h-[calc(100vh-4rem)];

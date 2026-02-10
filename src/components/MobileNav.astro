@@ -7,6 +7,7 @@ import { getConfigFile, getLocalizedSidebar } from '../utils/config';
 import { getI18nConfig, getLocaleFromPath } from '../utils/i18n';
 import { createLink, isLinkActive } from '../utils/url';
 import Icon from './Icon.astro';
+import SidebarAnchors from './SidebarAnchors.astro';
 import VersionSwitcher from './VersionSwitcher.astro';
 import LanguageSwitcher from './LanguageSwitcher.astro';
 
@@ -25,6 +26,33 @@ const { navbar } = config.navigation;
 const navTabs = navbar.tabs;
 const hasTabs = navTabs && navTabs.length > 0;
 const social = navbar.social;
+const anchors = config.navigation.anchors || [];
+
+// Collect all hrefs from sidebar items (recursively for nested items)
+function collectHrefs(items: any[]): string[] {
+  const hrefs: string[] = [];
+  for (const item of items) {
+    if (item.href) hrefs.push(item.href.replace(/\/$/, '') || '/');
+    if (item.slug) hrefs.push(`/${item.slug}`.replace(/\/$/, '') || '/');
+    if (item.items) hrefs.push(...collectHrefs(item.items));
+  }
+  return hrefs;
+}
+
+// Determine active anchor and filter sidebar groups by anchor's groups
+const normalizedPath = currentPath.replace(/\/$/, '') || '/';
+const activeAnchor = anchors.find((a) => {
+  if (a.groups?.length) {
+    const groupItems = sidebar.filter((g: any) => a.groups!.includes(g.label));
+    return groupItems.some((g: any) => collectHrefs(g.items || []).includes(normalizedPath));
+  }
+  const normalizedHref = a.href.replace(/\/$/, '') || '/';
+  return normalizedPath === normalizedHref || normalizedPath.startsWith(normalizedHref + '/');
+});
+
+const visibleSidebar = activeAnchor?.groups?.length
+  ? sidebar.filter((g: any) => activeAnchor.groups!.includes(g.label))
+  : sidebar;
 
 // For localized content, we need to adjust hrefs to include locale prefix
 const localizeHref = (href: string) => {
@@ -44,9 +72,14 @@ const isActive = (href: string) => {
   return isLinkActive(fullHref, currentPath);
 };
 
-const isTabActive = (tab: { href: string; match?: string }) => {
+const isTabActive = (tab: { href: string; match?: string; groups?: string[] }) => {
+  // If tab has groups, check if current page belongs to any of those groups
+  if (tab.groups?.length) {
+    const groupItems = sidebar.filter((g: any) => tab.groups!.includes(g.label));
+    return groupItems.some((g: any) => collectHrefs(g.items || []).includes(normalizedPath));
+  }
+  // Fallback: URL prefix matching
   const match = tab.match || tab.href;
-  const normalizedPath = currentPath.replace(/\/$/, '') || '/';
   const normalizedMatch = match.replace(/\/$/, '') || '/';
   return normalizedPath === normalizedMatch || normalizedPath.startsWith(normalizedMatch + '/');
 };
@@ -110,7 +143,7 @@ const isTabActive = (tab: { href: string; match?: string }) => {
         </div>
       )}
 
-      {sidebar.map((group: any) => (
+      {visibleSidebar.map((group: any) => (
         <div class="mobile-nav-group">
           <div class="mobile-nav-group-title">{group.label}</div>
           <ul class="mobile-nav-list">
@@ -134,6 +167,11 @@ const isTabActive = (tab: { href: string; match?: string }) => {
         </div>
       ))}
     </nav>
+
+    {/* Sidebar anchors */}
+    {anchors.length > 0 && (
+      <SidebarAnchors anchors={anchors} currentPath={currentPath} activeAnchorLabel={activeAnchor?.label} />
+    )}
 
     {/* Social links at bottom */}
     {(social?.github || social?.twitter || social?.discord) && (
@@ -190,24 +228,38 @@ const isTabActive = (tab: { href: string; match?: string }) => {
     @apply flex items-center justify-between p-4 border-b border-border;
   }
 
-  /* Switchers row */
+  /* Switchers row — acts as positioning anchor for dropdowns so they
+     stay within the narrow mobile panel bounds */
   .mobile-nav-switchers {
     @apply flex items-center gap-2 px-3 py-2 border-b border-border;
+    position: relative;
+    z-index: 10;
   }
 
-  .mobile-nav-switchers:empty {
+  .mobile-nav-switchers:not(:has(*)) {
     @apply hidden;
   }
 
-  /* Override dropdown positioning inside mobile nav */
+  .mobile-nav-switchers :global(.version-switcher) {
+    position: static;
+  }
+
   .mobile-nav-switchers .version-dropdown {
-    left: 0;
-    right: auto;
+    left: 0.75rem;
+    right: 0.75rem;
+    min-width: 0;
+    max-width: none;
+  }
+
+  .mobile-nav-switchers :global(.language-switcher) {
+    position: static;
   }
 
   .mobile-nav-switchers .language-switcher [data-lang-dropdown] {
-    left: 0;
-    right: auto;
+    left: 0.75rem;
+    right: 0.75rem;
+    min-width: 0;
+    max-width: none;
   }
 
   /* Tabs row */
