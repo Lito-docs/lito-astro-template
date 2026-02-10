@@ -160,45 +160,37 @@ const navClose = t['search.close'] || 'Close';
     visibility: visible;
   }
 
-  /* Backdrop with blur */
+  /* Backdrop */
   .search-backdrop {
     @apply absolute inset-0;
-    background: oklch(from var(--background) l c h / 0.85);
-    backdrop-filter: blur(8px) saturate(150%);
-    -webkit-backdrop-filter: blur(8px) saturate(150%);
+    background: oklch(from var(--background) l c h / 0.8);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
   }
 
   /* Main container */
   .search-container {
-    @apply relative w-full max-w-2xl mx-4 rounded-xl overflow-hidden;
+    @apply relative w-full max-w-2xl mx-4 rounded-lg overflow-hidden;
     @apply flex flex-col;
     max-height: 70vh;
     background: var(--card);
     border: 1px solid var(--border);
-    box-shadow:
-      0 0 0 1px oklch(from var(--primary-500) l c h / 0.1),
-      0 16px 70px -12px rgb(0 0 0 / 0.35),
-      0 8px 24px -8px rgb(0 0 0 / 0.2);
-    transform: translateY(-10px) scale(0.98);
+    box-shadow: var(--shadow-xl);
+    transform: translateY(-8px);
     opacity: 0;
     transition:
-      transform 200ms cubic-bezier(0.32, 0.72, 0, 1),
+      transform 150ms ease,
       opacity 150ms ease;
   }
 
   .search-modal.open .search-container {
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
     opacity: 1;
   }
 
   /* Header */
   .search-header {
     @apply p-4;
-    background: linear-gradient(
-      to bottom,
-      var(--card),
-      oklch(from var(--muted) l c h / 0.3)
-    );
     border-bottom: 1px solid var(--border);
   }
 
@@ -217,7 +209,7 @@ const navClose = t['search.close'] || 'Close';
   }
 
   .search-input {
-    @apply flex-1 bg-transparent text-lg font-medium;
+    @apply flex-1 bg-transparent text-base font-medium;
     @apply focus:outline-none;
     color: var(--foreground);
   }
@@ -314,7 +306,7 @@ const navClose = t['search.close'] || 'Close';
   }
 
   .search-result-item.selected {
-    background: var(--primary-500);
+    background: var(--accent);
   }
 
   .search-result-icon {
@@ -323,7 +315,7 @@ const navClose = t['search.close'] || 'Close';
   }
 
   .search-result-item.selected .search-result-icon {
-    color: var(--primary-foreground);
+    color: var(--foreground);
   }
 
   .search-result-content {
@@ -336,7 +328,7 @@ const navClose = t['search.close'] || 'Close';
   }
 
   .search-result-item.selected .search-result-title {
-    color: var(--primary-foreground);
+    color: var(--foreground);
   }
 
   .search-result-excerpt {
@@ -345,7 +337,7 @@ const navClose = t['search.close'] || 'Close';
   }
 
   .search-result-item.selected .search-result-excerpt {
-    color: oklch(from var(--primary-foreground) l c h / 0.8);
+    color: var(--muted-foreground);
   }
 
   .search-result-excerpt :global(mark) {
@@ -356,8 +348,8 @@ const navClose = t['search.close'] || 'Close';
   }
 
   .search-result-item.selected .search-result-excerpt :global(mark) {
-    background: oklch(from var(--primary-foreground) l c h / 0.25);
-    color: var(--primary-foreground);
+    background: oklch(from var(--primary-400) l c h / 0.3);
+    color: inherit;
   }
 
   .search-result-meta {
@@ -371,7 +363,7 @@ const navClose = t['search.close'] || 'Close';
   }
 
   .search-result-item.selected .search-result-path {
-    color: oklch(from var(--primary-foreground) l c h / 0.7);
+    color: var(--muted-foreground);
   }
 
   .search-result-action {
@@ -386,7 +378,7 @@ const navClose = t['search.close'] || 'Close';
   }
 
   .search-result-item.selected .search-result-action {
-    color: var(--primary-foreground);
+    color: var(--muted-foreground);
   }
 
   .search-result-action kbd {
@@ -396,8 +388,8 @@ const navClose = t['search.close'] || 'Close';
   }
 
   .search-result-item.selected .search-result-action kbd {
-    background: oklch(from var(--primary-foreground) l c h / 0.15);
-    border-color: oklch(from var(--primary-foreground) l c h / 0.3);
+    background: var(--muted);
+    border-color: var(--border);
   }
 
   /* Category/Section badge */
@@ -408,8 +400,8 @@ const navClose = t['search.close'] || 'Close';
   }
 
   .search-result-item.selected .search-result-category {
-    background: oklch(from var(--primary-foreground) l c h / 0.2);
-    color: var(--primary-foreground);
+    background: var(--muted);
+    color: var(--muted-foreground);
   }
 
   /* Footer */

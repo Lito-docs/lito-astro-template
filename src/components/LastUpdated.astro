@@ -1,0 +1,76 @@
+---
+/**
+ * LastUpdated - Shows the last modified date of the current page
+ *
+ * Gets lastModified from frontmatter (injected by remark plugin)
+ * and formats based on config.integrations.lastUpdated.format
+ */
+import Icon from './Icon.astro';
+import { getConfigFile } from '../utils/config';
+import { t, getI18nConfig, getLocaleFromPath } from '../utils/i18n';
+
+interface Props {
+  frontmatter?: Record<string, unknown>;
+}
+
+const { frontmatter } = Astro.props;
+const config = await getConfigFile();
+const lastUpdatedConfig = config.integrations?.lastUpdated;
+
+if (!lastUpdatedConfig?.enabled) {
+  return null;
+}
+
+const i18nConfig = await getI18nConfig();
+const currentLocale = getLocaleFromPath(Astro.url.pathname, i18nConfig.locales) || i18nConfig.defaultLocale;
+const label = await t('lastUpdated', currentLocale);
+
+// Get lastModified from frontmatter (injected by remark plugin)
+const lastModified = frontmatter?.lastModified as string | undefined;
+
+if (!lastModified) {
+  return null;
+}
+
+const date = new Date(lastModified);
+const format = lastUpdatedConfig.format || 'long';
+
+function formatDate(d: Date, fmt: string, locale: string): string {
+  if (fmt === 'relative') {
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    if (diffDays === 0) return 'today';
+    if (diffDays === 1) return 'yesterday';
+    if (diffDays < 30) return `${diffDays} days ago`;
+    const diffMonths = Math.floor(diffDays / 30);
+    if (diffMonths === 1) return '1 month ago';
+    if (diffMonths < 12) return `${diffMonths} months ago`;
+    const diffYears = Math.floor(diffDays / 365);
+    return diffYears === 1 ? '1 year ago' : `${diffYears} years ago`;
+  }
+
+  const options: Intl.DateTimeFormatOptions = fmt === 'short'
+    ? { year: 'numeric', month: 'short', day: 'numeric' }
+    : { year: 'numeric', month: 'long', day: 'numeric' };
+
+  return d.toLocaleDateString(locale, options);
+}
+
+const formattedDate = formatDate(date, format, currentLocale);
+---
+
+<div class="last-updated">
+  <Icon name="lucide:clock" size={14} />
+  <span>{label}: {formattedDate}</span>
+</div>
+
+<style>
+  .last-updated {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+  }
+</style>

@@ -2,16 +2,18 @@
 import { getConfigFile } from '../utils/config';
 import { createLink } from '../utils/url';
 import ThemeToggle from './ThemeToggle.astro';
-import LanguageSwitcher from './LanguageSwitcher.astro';
-import VersionSwitcher from './VersionSwitcher.astro';
+import NavDropdown from './NavDropdown.astro';
+import GitHubStars from './GitHubStars.astro';
 import Icon from './Icon.astro';
 
 const config = await getConfigFile();
 const { navbar } = config.navigation;
+const social = navbar.social;
+const hasTabs = navbar.tabs && navbar.tabs.length > 0;
 ---
 
 <header class="topbar">
-  <div class="max-w-full mx-auto px-4 md:px-6 py-3 flex items-center justify-between">
+  <div class="topbar-inner">
     <!-- Mobile menu button -->
     <button
       id="mobile-menu-btn"
@@ -24,7 +26,7 @@ const { navbar } = config.navigation;
     <!-- Logo -->
     <div class="flex items-center gap-4">
       <a href={createLink(config.branding.logo.href)} class="logo-link">
-        <Icon name="lucide:book-open" size={24} class="text-primary-500" />
+        <Icon name="lucide:book-open" size={22} class="text-primary-500" />
         <h1 class="logo-text hidden sm:block">
           {config.metadata.name}
         </h1>
@@ -32,21 +34,25 @@ const { navbar } = config.navigation;
     </div>
 
     <!-- Desktop nav -->
-    <nav class="hidden md:flex items-center gap-1">
+    <nav class="hidden md:flex items-center gap-0.5">
       {navbar.links?.map((link) => (
-        <a
-          href={createLink(link.href)}
-          class="nav-link"
-          target={link.href.startsWith('http') ? '_blank' : undefined}
-          rel={link.href.startsWith('http') ? 'noopener noreferrer' : undefined}
-        >
-          {link.label}
-        </a>
+        link.type === 'dropdown' && link.items ? (
+          <NavDropdown link={link} />
+        ) : (
+          <a
+            href={createLink(link.href || '#')}
+            class="nav-link"
+            target={link.href?.startsWith('http') ? '_blank' : undefined}
+            rel={link.href?.startsWith('http') ? 'noopener noreferrer' : undefined}
+          >
+            {link.label}
+          </a>
+        )
       ))}
     </nav>
 
     <!-- Actions -->
-    <div class="flex items-center gap-2 sm:gap-3">
+    <div class="flex items-center gap-2 sm:gap-2.5">
       <!-- Mobile search button -->
       <button
         onclick="window.openSearchModal && window.openSearchModal()"
@@ -63,13 +69,19 @@ const { navbar } = config.navigation;
         class="search-trigger hidden sm:flex"
       >
         <Icon name="lucide:search" size={14} />
-        <span>Search</span>
+        <span class="search-placeholder">Search docs...</span>
         <kbd class="search-kbd">⌘K</kbd>
       </button>
 
+      <!-- Social links -->
+      {social?.github && (
+        <a href={social.github.href} class="social-link" target="_blank" rel="noopener noreferrer" title="GitHub">
+          <Icon name="simple-icons:github" size={18} />
+          {social.github.showStars && <GitHubStars href={social.github.href} />}
+        </a>
+      )}
+
       <ThemeToggle />
-      <VersionSwitcher />
-      <LanguageSwitcher />
 
       {navbar.cta && (
         <a href={createLink(navbar.cta.href)} class="cta-button hidden sm:inline-flex">
@@ -83,9 +95,13 @@ const { navbar } = config.navigation;
 <style>
   @reference "../styles/global.css";
 
+  .topbar-inner {
+    @apply max-w-full mx-auto px-4 md:px-6 py-3 flex items-center justify-between;
+  }
+
   .mobile-menu-btn {
-    @apply p-2 text-muted-foreground rounded-lg;
-    @apply transition-all duration-150;
+    @apply p-2 text-muted-foreground rounded-md;
+    @apply transition-colors duration-150;
   }
 
   .mobile-menu-btn:hover {
@@ -93,58 +109,44 @@ const { navbar } = config.navigation;
   }
 
   .logo-link {
-    @apply flex items-center gap-3;
-    @apply transition-all duration-200;
+    @apply flex items-center gap-2.5;
+    @apply transition-opacity duration-150;
   }
 
   .logo-link:hover {
-    transform: translateY(-1px);
-    opacity: 0.85;
+    opacity: 0.8;
   }
 
   .logo-text {
-    @apply text-lg font-bold text-foreground m-0 tracking-tight;
+    @apply text-base font-semibold text-foreground m-0 tracking-tight;
   }
 
   .nav-link {
     @apply text-sm font-medium text-muted-foreground;
     @apply px-3 py-2 rounded-md;
-    @apply transition-all duration-150;
-    position: relative;
-  }
-
-  .nav-link::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 0;
-    height: 2px;
-    background: var(--primary-500);
-    border-radius: 1px;
-    transition: width 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    @apply transition-colors duration-150;
   }
 
   .nav-link:hover {
     @apply text-foreground;
   }
 
-  .nav-link:hover::after {
-    width: 60%;
-  }
-
   .search-trigger {
-    @apply items-center gap-2 px-3 py-2 text-sm text-muted-foreground;
-    @apply rounded-lg border border-border;
-    @apply transition-all duration-200;
+    @apply items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground;
+    @apply rounded-md border border-border;
+    @apply transition-colors duration-150;
     background: var(--input);
+    min-width: 12rem;
   }
 
   .search-trigger:hover {
-    @apply border-primary-400 text-foreground;
-    background: var(--card);
-    box-shadow: 0 0 0 3px var(--primary-100);
+    @apply text-foreground;
+    border-color: var(--gray-300);
+  }
+
+  .search-placeholder {
+    @apply flex-1 text-left;
+    font-size: 0.8125rem;
   }
 
   .search-kbd {
@@ -153,9 +155,19 @@ const { navbar } = config.navigation;
     border: 1px solid var(--border);
   }
 
+  .social-link {
+    @apply hidden sm:flex items-center gap-1.5 p-2 rounded-md;
+    @apply transition-colors duration-150;
+    color: var(--muted-foreground);
+  }
+
+  .social-link:hover {
+    color: var(--foreground);
+  }
+
   .mobile-search-btn {
-    @apply p-2 rounded-lg;
-    @apply transition-all duration-150;
+    @apply p-2 rounded-md;
+    @apply transition-colors duration-150;
     color: var(--muted-foreground);
     background: var(--input);
     border: 1px solid var(--border);
@@ -163,11 +175,5 @@ const { navbar } = config.navigation;
 
   .mobile-search-btn:hover {
     color: var(--foreground);
-    background: var(--card);
-    border-color: var(--primary-400);
-  }
-
-  .mobile-search-btn:active {
-    transform: scale(0.95);
   }
 </style>

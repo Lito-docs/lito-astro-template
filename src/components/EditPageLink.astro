@@ -1,0 +1,64 @@
+---
+/**
+ * EditPageLink - Shows a link to edit the current page on GitHub (or other repo)
+ *
+ * Reads config.integrations.editPage and replaces {path} with the source file path.
+ */
+import Icon from './Icon.astro';
+import { getConfigFile } from '../utils/config';
+import { t, getI18nConfig, getLocaleFromPath } from '../utils/i18n';
+
+interface Props {
+  sourceFile?: string;
+}
+
+const { sourceFile } = Astro.props;
+
+const config = await getConfigFile();
+const editConfig = config.integrations?.editPage;
+
+if (!editConfig?.enabled || !editConfig.pattern) {
+  return null;
+}
+
+const i18nConfig = await getI18nConfig();
+const currentLocale = getLocaleFromPath(Astro.url.pathname, i18nConfig.locales) || i18nConfig.defaultLocale;
+const editLabel = await t('editPage', currentLocale);
+
+// Derive the source file path relative to the docs root
+let filePath: string;
+if (sourceFile) {
+  // Extract relative path after src/pages/ from the absolute source file path
+  const pagesMarker = 'src/pages/';
+  const idx = sourceFile.indexOf(pagesMarker);
+  filePath = idx >= 0 ? sourceFile.slice(idx + pagesMarker.length) : sourceFile;
+} else {
+  // Fallback: derive from URL (won't handle index pages correctly)
+  const pathname = Astro.url.pathname;
+  const cleanPath = pathname.replace(/^\/|\/$/g, '') || 'index';
+  filePath = `${cleanPath}.mdx`;
+}
+
+const editUrl = editConfig.pattern.replace('{path}', filePath);
+---
+
+<a href={editUrl} class="edit-page-link" target="_blank" rel="noopener noreferrer">
+  <Icon name="lucide:pencil" size={14} />
+  <span>{editLabel}</span>
+</a>
+
+<style>
+  .edit-page-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+    text-decoration: none;
+    transition: color 0.15s ease;
+  }
+
+  .edit-page-link:hover {
+    color: var(--foreground);
+  }
+</style>

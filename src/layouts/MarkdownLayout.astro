@@ -8,9 +8,9 @@ type Props = MarkdownLayoutProps<SEOFrontmatter & {
   description?: string;
 }>;
 
-const { frontmatter } = Astro.props;
+const { frontmatter, file } = Astro.props;
 ---
 
-<DocLayout title={frontmatter.title} description={frontmatter.description} frontmatter={frontmatter}>
+<DocLayout title={frontmatter.title} description={frontmatter.description} frontmatter={frontmatter} sourceFile={file}>
   <slot />
 </DocLayout>

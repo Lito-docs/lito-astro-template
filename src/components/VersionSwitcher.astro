@@ -2,12 +2,14 @@
 /**
  * VersionSwitcher - Dropdown for switching between documentation versions
  *
- * Displays in the header when versioning is enabled and multiple versions exist.
+ * Displays in the sidebar when versioning is enabled and multiple versions exist.
+ * Supports multiple instances (sidebar + mobile nav) via data attributes.
  */
 import Icon from './Icon.astro';
 import { getConfigFile } from '../utils/config';
 import {
   getVersionFromPath,
+  getDefaultVersion,
   buildVersionedPath,
   type VersioningConfig,
   type Version,
@@ -23,31 +25,37 @@ if (!versioningConfig?.enabled || !versioningConfig.versions?.length || versioni
 
 const currentPath = Astro.url.pathname;
 const currentVersion = getVersionFromPath(currentPath, versioningConfig);
+const defaultVersion = getDefaultVersion(versioningConfig);
 const versions = versioningConfig.versions;
 ---
 
-<div class="version-switcher relative" id="version-switcher">
+<div class="version-switcher relative" data-version-switcher>
   <button
-    id="version-switcher-btn"
     class="version-button"
     aria-label="Switch documentation version"
     aria-expanded="false"
     aria-haspopup="listbox"
+    data-version-btn
   >
     <Icon name="lucide:git-branch" size={16} />
     <span class="version-label">{currentVersion?.label || 'Version'}</span>
     <Icon name="lucide:chevron-down" size={14} class="chevron" />
   </button>
 
-  <div id="version-dropdown" class="version-dropdown hidden" role="listbox">
+  <div class="version-dropdown hidden" role="listbox" data-version-dropdown>
     {versions.map((version: Version) => {
       const href = buildVersionedPath(currentPath, version, versioningConfig);
       const isActive = version.id === currentVersion?.id;
       const isDeprecated = version.deprecated;
+      // Fallback: version root page if the exact page doesn't exist in that version
+      const fallbackHref = version.id === defaultVersion?.id
+        ? '/'
+        : `/${version.path}`;
 
       return (
         <a
           href={href}
+          data-fallback={fallbackHref}
           class={`version-option ${isActive ? 'active' : ''}`}
           role="option"
           aria-selected={isActive ? 'true' : 'false'}
@@ -64,35 +72,62 @@ const versions = versioningConfig.versions;
 </div>
 
 <script>
-  const switcher = document.getElementById('version-switcher');
-  const btn = document.getElementById('version-switcher-btn');
-  const dropdown = document.getElementById('version-dropdown');
+  function initVersionSwitchers() {
+    document.querySelectorAll('[data-version-switcher]').forEach((switcher) => {
+      const btn = switcher.querySelector('[data-version-btn]') as HTMLButtonElement;
+      const dropdown = switcher.querySelector('[data-version-dropdown]') as HTMLElement;
+      if (!btn || !dropdown) return;
 
-  if (btn && dropdown) {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const isHidden = dropdown.classList.contains('hidden');
-      dropdown.classList.toggle('hidden');
-      btn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
-    });
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isHidden = dropdown.classList.contains('hidden');
+        dropdown.classList.toggle('hidden');
+        btn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+      });
 
-    // Close on outside click
-    document.addEventListener('click', (e) => {
-      if (switcher && !switcher.contains(e.target as Node)) {
-        dropdown.classList.add('hidden');
-        btn.setAttribute('aria-expanded', 'false');
-      }
-    });
+      // Intercept version link clicks — fallback if target page doesn't exist
+      dropdown.querySelectorAll('.version-option').forEach((link) => {
+        link.addEventListener('click', async (e) => {
+          const anchor = link as HTMLAnchorElement;
+          const href = anchor.getAttribute('href');
+          const fallback = anchor.getAttribute('data-fallback');
+          if (!href || !fallback || anchor.classList.contains('active')) return;
 
-    // Close on escape
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && !dropdown.classList.contains('hidden')) {
-        dropdown.classList.add('hidden');
-        btn.setAttribute('aria-expanded', 'false');
-        btn.focus();
-      }
+          e.preventDefault();
+          try {
+            const res = await fetch(href, { method: 'HEAD' });
+            if (res.ok) {
+              window.location.href = href;
+            } else {
+              window.location.href = fallback;
+            }
+          } catch {
+            window.location.href = fallback;
+          }
+        });
+      });
+
+      // Close on outside click
+      document.addEventListener('click', (e) => {
+        if (!switcher.contains(e.target as Node)) {
+          dropdown.classList.add('hidden');
+          btn.setAttribute('aria-expanded', 'false');
+        }
+      });
+
+      // Close on escape
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !dropdown.classList.contains('hidden')) {
+          dropdown.classList.add('hidden');
+          btn.setAttribute('aria-expanded', 'false');
+          btn.focus();
+        }
+      });
     });
   }
+
+  initVersionSwitchers();
+  document.addEventListener('astro:page-load', initVersionSwitchers);
 </script>
 
 <style>

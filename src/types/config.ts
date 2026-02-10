@@ -52,6 +52,8 @@ export interface NavigationConfig {
 
 export interface NavbarConfig {
     links?: NavLink[];
+    tabs?: NavTab[];
+    social?: NavSocial;
     cta?: {
         label: string;
         href: string;
@@ -61,8 +63,30 @@ export interface NavbarConfig {
 
 export interface NavLink {
     label: string;
+    href?: string;
+    icon?: string;
+    type?: 'link' | 'dropdown';
+    items?: NavDropdownItem[];
+}
+
+export interface NavDropdownItem {
+    label: string;
+    href: string;
+    description?: string;
+    icon?: string;
+}
+
+export interface NavTab {
+    label: string;
     href: string;
     icon?: string;
+    match?: string;
+}
+
+export interface NavSocial {
+    github?: { href: string; showStars?: boolean };
+    twitter?: { href: string };
+    discord?: { href: string };
 }
 
 export interface SidebarGroup {
@@ -138,6 +162,16 @@ export interface ThemeExtensions {
     integrations?: IntegrationsConfig;
     /** Documentation versioning */
     versioning?: VersioningConfig;
+    /** Announcement bar above navbar */
+    announcement?: AnnouncementConfig;
+}
+
+export interface AnnouncementConfig {
+    enabled?: boolean;
+    text: string;
+    href?: string;
+    dismissible?: boolean;
+    variant?: 'default' | 'info' | 'success' | 'warning';
 }
 
 export interface FooterConfig {
@@ -199,10 +233,25 @@ export interface IntegrationsConfig {
         provider: string;
         measurementId: string;
     } | null;
-    feedback?: {
-        enabled: boolean;
-    };
+    feedback?: FeedbackConfig;
+    editPage?: EditPageConfig;
+    lastUpdated?: LastUpdatedConfig;
     copyPage?: CopyPageConfig;
+}
+
+export interface EditPageConfig {
+    enabled?: boolean;
+    pattern?: string;
+}
+
+export interface LastUpdatedConfig {
+    enabled?: boolean;
+    format?: 'long' | 'short' | 'relative';
+}
+
+export interface FeedbackConfig {
+    enabled?: boolean;
+    webhookUrl?: string;
 }
 
 export interface CopyPageConfig {

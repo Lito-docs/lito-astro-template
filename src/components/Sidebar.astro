@@ -1,37 +1,155 @@
 ---
 import { getConfigFile, getLocalizedSidebar } from "../utils/config";
 import { getI18nConfig, getLocaleFromPath } from "../utils/i18n";
+import { getVersionFromPath, isDefaultVersion, type VersioningConfig } from "../utils/versioning";
+import type { SidebarGroup as SidebarGroupType, SidebarItem } from "../types/config";
 import SidebarGroup from "./SidebarGroup.astro";
+import VersionSwitcher from "./VersionSwitcher.astro";
+import LanguageSwitcher from "./LanguageSwitcher.astro";
+import Icon from "./Icon.astro";
 
 const config = await getConfigFile();
 const i18nConfig = await getI18nConfig();
+const social = config.navigation.navbar.social;
 const currentPath = Astro.url.pathname;
 
 // Get current locale from URL
 const currentLocale = getLocaleFromPath(currentPath, i18nConfig.locales) || i18nConfig.defaultLocale;
 
 // Get locale-specific sidebar (falls back to default if not found)
-const sidebarItems = getLocalizedSidebar(currentLocale, i18nConfig.defaultLocale);
+const sidebarItems = getLocalizedSidebar(currentLocale, i18nConfig.defaultLocale) as SidebarGroupType[];
+
+// Get current version from URL
+const versioningConfig = config.versioning as VersioningConfig | undefined;
+const currentVersion = versioningConfig?.enabled
+  ? getVersionFromPath(currentPath, versioningConfig)
+  : null;
+const needsVersionPrefix = currentVersion && !isDefaultVersion(currentVersion, versioningConfig);
+const versionPrefix = needsVersionPrefix ? `/${currentVersion.path}` : '';
+
+// Build set of available pages for version-aware filtering
+// Glob all .md/.mdx pages to know which routes exist
+const allPages = import.meta.glob('/src/pages/**/*.{md,mdx,astro}', { eager: false });
+const availableRoutes = new Set(
+  Object.keys(allPages).map((filePath) =>
+    filePath
+      .replace('/src/pages', '')
+      .replace(/\/index\.(md|mdx|astro)$/, '')
+      .replace(/\.(md|mdx|astro)$/, '')
+  )
+);
+
+// Filter sidebar items to only include pages that exist for the current version
+function filterSidebarItems(items: SidebarItem[]): SidebarItem[] {
+  if (!needsVersionPrefix) return items; // no filtering for default version
+
+  return items.reduce<SidebarItem[]>((acc, item) => {
+    if (item.items && item.items.length > 0) {
+      // Nested group — recursively filter children
+      const filteredChildren = filterSidebarItems(item.items);
+      if (filteredChildren.length > 0) {
+        acc.push({ ...item, items: filteredChildren });
+      }
+    } else {
+      // Leaf item — check if the versioned page exists
+      const itemHref = item.href || `/${item.slug}`;
+      const versionedRoute = `${versionPrefix}${itemHref.startsWith('/') ? itemHref : '/' + itemHref}`;
+      if (availableRoutes.has(versionedRoute)) {
+        acc.push(item);
+      }
+    }
+    return acc;
+  }, []);
+}
+
+function filterSidebarGroups(groups: SidebarGroupType[]): SidebarGroupType[] {
+  if (!needsVersionPrefix) return groups;
+
+  return groups.reduce<SidebarGroupType[]>((acc, group) => {
+    const filteredItems = filterSidebarItems(group.items || []);
+    if (filteredItems.length > 0) {
+      acc.push({ ...group, items: filteredItems });
+    }
+    return acc;
+  }, []);
+}
+
+const filteredSidebarItems = filterSidebarGroups(sidebarItems);
 
 // For localized content, we need to adjust hrefs to include locale prefix
+// Also adds version prefix when viewing a non-default version
 const localizeHref = (href: string) => {
-  if (currentLocale === i18nConfig.defaultLocale) {
-    return href;
+  if (href.startsWith('http')) return href;
+
+  let result = href;
+
+  // Add locale prefix
+  if (currentLocale !== i18nConfig.defaultLocale) {
+    if (!result.startsWith(`/${currentLocale}/`)) {
+      result = `/${currentLocale}${result.startsWith('/') ? result : '/' + result}`;
+    }
   }
-  // Add locale prefix if not already present
-  if (!href.startsWith(`/${currentLocale}/`) && !href.startsWith('http')) {
-    return `/${currentLocale}${href.startsWith('/') ? href : '/' + href}`;
+
+  // Add version prefix
+  if (versionPrefix && !result.startsWith(versionPrefix + '/')) {
+    result = `${versionPrefix}${result.startsWith('/') ? result : '/' + result}`;
   }
-  return href;
+
+  return result;
 };
 ---
 
-<aside class="sidebar scrollbar-hide">
-  <nav class="px-2 mt-2 pb-6 space-y-6">
+<aside class="sidebar scrollbar-hide" id="sidebar-nav">
+  <!-- Version & Language switchers -->
+  <div class="sidebar-switchers">
+    <VersionSwitcher />
+    <LanguageSwitcher />
+  </div>
+
+  <nav class="px-2 mt-2 pb-6 space-y-6 scrollbar-hide" id="sidebar-nav-scroll">
     {
-      sidebarItems.map((group: any) => (
+      filteredSidebarItems.map((group: any) => (
         <SidebarGroup group={group} currentPath={currentPath} localizeHref={localizeHref} />
       ))
     }
   </nav>
+
+  <!-- Social links -->
+  {(social?.twitter || social?.discord) && (
+    <div class="sidebar-social">
+      {social.twitter && (
+        <a href={social.twitter.href} class="sidebar-social-link" target="_blank" rel="noopener noreferrer" title="Twitter">
+          <Icon name="simple-icons:x" size={16} />
+        </a>
+      )}
+      {social.discord && (
+        <a href={social.discord.href} class="sidebar-social-link" target="_blank" rel="noopener noreferrer" title="Discord">
+          <Icon name="simple-icons:discord" size={18} />
+        </a>
+      )}
+    </div>
+  )}
 </aside>
+
+<script>
+  function initSidebarScroll() {
+    const nav = document.getElementById('sidebar-nav-scroll');
+    if (!nav) return;
+
+    const key = 'lito-sidebar-scroll';
+
+    // Restore scroll position
+    const saved = sessionStorage.getItem(key);
+    if (saved) {
+      nav.scrollTop = parseInt(saved, 10);
+    }
+
+    // Save scroll position on scroll
+    nav.addEventListener('scroll', () => {
+      sessionStorage.setItem(key, String(nav.scrollTop));
+    }, { passive: true });
+  }
+
+  initSidebarScroll();
+  document.addEventListener('astro:page-load', initSidebarScroll);
+</script>

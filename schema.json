@@ -66,9 +66,74 @@
                 "type": "object",
                 "properties": {
                   "label": { "type": "string" },
-                  "href": { "type": "string" }
+                  "href": { "type": "string" },
+                  "type": {
+                    "type": "string",
+                    "enum": ["link", "dropdown"],
+                    "default": "link",
+                    "description": "Link type: 'link' for flat navigation, 'dropdown' for expandable menu"
+                  },
+                  "items": {
+                    "type": "array",
+                    "description": "Dropdown items (only used when type is 'dropdown')",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "label": { "type": "string" },
+                        "href": { "type": "string" },
+                        "description": { "type": "string" },
+                        "icon": { "type": "string" }
+                      },
+                      "required": ["label", "href"]
+                    }
+                  }
+                },
+                "required": ["label"]
+              }
+            },
+            "tabs": {
+              "type": "array",
+              "description": "Section tabs displayed below the topbar for Stripe-style section navigation",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "label": { "type": "string" },
+                  "href": { "type": "string" },
+                  "icon": { "type": "string" },
+                  "match": {
+                    "type": "string",
+                    "description": "URL pattern to match for active state (e.g., '/docs' matches /docs/*)"
+                  }
                 },
                 "required": ["label", "href"]
+              }
+            },
+            "social": {
+              "type": "object",
+              "description": "Social links displayed in the navbar actions area",
+              "properties": {
+                "github": {
+                  "type": "object",
+                  "properties": {
+                    "href": { "type": "string" },
+                    "showStars": { "type": "boolean", "default": false }
+                  },
+                  "required": ["href"]
+                },
+                "twitter": {
+                  "type": "object",
+                  "properties": {
+                    "href": { "type": "string" }
+                  },
+                  "required": ["href"]
+                },
+                "discord": {
+                  "type": "object",
+                  "properties": {
+                    "href": { "type": "string" }
+                  },
+                  "required": ["href"]
+                }
               }
             },
             "cta": {
@@ -227,7 +292,32 @@
         "feedback": {
           "type": "object",
           "properties": {
-            "enabled": { "type": "boolean" }
+            "enabled": { "type": "boolean", "default": false },
+            "webhookUrl": { "type": "string", "description": "Optional POST endpoint for feedback data" }
+          }
+        },
+        "editPage": {
+          "type": "object",
+          "description": "Edit page link configuration",
+          "properties": {
+            "enabled": { "type": "boolean", "default": false },
+            "pattern": {
+              "type": "string",
+              "description": "URL pattern with {path} placeholder (e.g., 'https://github.com/org/repo/edit/main/docs/{path}')"
+            }
+          }
+        },
+        "lastUpdated": {
+          "type": "object",
+          "description": "Last updated date display configuration",
+          "properties": {
+            "enabled": { "type": "boolean", "default": false },
+            "format": {
+              "type": "string",
+              "enum": ["long", "short", "relative"],
+              "default": "long",
+              "description": "Date format: 'long' (January 1, 2025), 'short' (Jan 1, 2025), 'relative' (2 days ago)"
+            }
           }
         },
         "copyPage": {
@@ -422,6 +512,22 @@
               "description": "Banner message (use {version} and {latest} placeholders)"
             }
           }
+        }
+      }
+    },
+    "announcement": {
+      "type": "object",
+      "description": "Announcement bar displayed above the navbar",
+      "properties": {
+        "enabled": { "type": "boolean", "default": false },
+        "text": { "type": "string", "description": "Announcement text content" },
+        "href": { "type": "string", "description": "Optional link for the announcement" },
+        "dismissible": { "type": "boolean", "default": true, "description": "Allow users to dismiss the announcement" },
+        "variant": {
+          "type": "string",
+          "enum": ["default", "info", "success", "warning"],
+          "default": "default",
+          "description": "Visual style variant"
         }
       }
     },

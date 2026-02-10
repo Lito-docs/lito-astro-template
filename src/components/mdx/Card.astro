@@ -43,51 +43,35 @@ const isIconifyIcon = icon?.includes(':');
   @reference "../../styles/global.css";
 
   .card-component {
-    @apply block not-prose p-6 rounded-lg border border-border bg-card my-6;
-    @apply transition-all duration-200 ease-out;
-    box-shadow: var(--shadow-xs);
+    @apply block not-prose p-5 rounded-lg border border-border bg-card my-6;
+    @apply transition-colors duration-150;
     position: relative;
+    text-decoration: none;
   }
 
   .card-component:hover {
-    @apply border-primary-300;
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
+    border-color: var(--primary-300);
+    background: var(--accent);
+    text-decoration: none;
   }
 
   :global(.dark) .card-component:hover {
-    @apply border-primary-400;
+    border-color: var(--primary-400);
   }
 
   .card-icon {
-    @apply mb-4 w-12 h-12 rounded-lg flex items-center justify-center text-2xl;
-    @apply border border-primary-200 text-primary-600;
-    @apply transition-all duration-200;
-    background: linear-gradient(135deg, var(--primary-50), var(--primary-100));
-    box-shadow: var(--shadow-xs);
-  }
-
-  .card-component:hover .card-icon {
-    box-shadow: var(--shadow-sm);
-    transform: scale(1.05);
+    @apply mb-3 w-10 h-10 rounded-lg flex items-center justify-center text-xl;
+    @apply text-primary-600;
+    background: var(--primary-50);
   }
 
   :global(.dark) .card-icon {
-    @apply border-primary-300 text-primary-500;
-    background: linear-gradient(135deg, var(--primary-100), var(--primary-200));
+    @apply text-primary-400;
+    background: var(--primary-100);
   }
 
   .card-title {
-    @apply text-lg font-semibold text-card-foreground mb-2;
-    @apply transition-colors duration-150;
-  }
-
-  .card-component:hover .card-title {
-    @apply text-primary-600;
-  }
-
-  :global(.dark) .card-component:hover .card-title {
-    @apply text-primary-500;
+    @apply text-base font-semibold text-card-foreground mb-1.5;
   }
 
   .card-body {
@@ -96,12 +80,11 @@ const isIconifyIcon = icon?.includes(':');
 
   .card-arrow {
     @apply absolute right-4 top-1/2 -translate-y-1/2;
-    @apply text-muted-foreground opacity-0;
-    @apply transition-all duration-200;
+    @apply text-muted-foreground;
+    @apply transition-colors duration-150;
   }
 
   .card-component:hover .card-arrow {
-    @apply opacity-100 text-primary-500;
-    transform: translateY(-50%) translateX(4px);
+    @apply text-primary-500;
   }
 </style>

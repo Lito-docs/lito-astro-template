@@ -1,0 +1,77 @@
+---
+interface Props {
+  href: string;
+}
+
+const { href } = Astro.props;
+
+// Extract owner/repo from GitHub URL
+const match = href.match(/github\.com\/([^/]+)\/([^/]+)/);
+const repoPath = match ? `${match[1]}/${match[2]}` : null;
+---
+
+{repoPath && (
+  <span class="github-stars" data-repo={repoPath}>
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+    </svg>
+    <span class="github-stars-count" data-stars-target></span>
+  </span>
+)}
+
+<style>
+  @reference "../styles/global.css";
+
+  .github-stars {
+    @apply inline-flex items-center gap-1 text-xs font-medium;
+    @apply px-1.5 py-0.5 rounded-md;
+    color: var(--muted-foreground);
+    background: var(--muted);
+    border: 1px solid var(--border);
+  }
+
+  .github-stars svg {
+    opacity: 0.7;
+  }
+
+  .github-stars-count:empty::after {
+    content: '...';
+    opacity: 0.5;
+  }
+</style>
+
+<script>
+  function initGitHubStars() {
+    document.querySelectorAll('.github-stars[data-repo]').forEach(async (el) => {
+      const repo = el.getAttribute('data-repo');
+      if (!repo) return;
+
+      const target = el.querySelector('[data-stars-target]');
+      if (!target) return;
+
+      // Check sessionStorage cache
+      const cacheKey = `gh-stars-${repo}`;
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        target.textContent = cached;
+        return;
+      }
+
+      try {
+        const response = await fetch(`https://api.github.com/repos/${repo}`);
+        if (response.ok) {
+          const data = await response.json();
+          const count = data.stargazers_count;
+          const formatted = count >= 1000 ? `${(count / 1000).toFixed(1)}k` : String(count);
+          target.textContent = formatted;
+          sessionStorage.setItem(cacheKey, formatted);
+        }
+      } catch {
+        target.textContent = '';
+      }
+    });
+  }
+
+  initGitHubStars();
+  document.addEventListener('astro:page-load', initGitHubStars);
+</script>

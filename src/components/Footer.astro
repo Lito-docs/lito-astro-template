@@ -251,8 +251,8 @@ const footerLogo = footer?.logo ?? (config.branding?.logo ? {
 
 <style>
   .footer-container {
-    margin-top: 4rem;
-    padding: 3rem 0 1.5rem;
+    margin-top: 3rem;
+    padding: 2rem 0 1rem;
     border-top: 1px solid var(--border);
     background-color: var(--background);
   }
@@ -359,7 +359,7 @@ const footerLogo = footer?.logo ?? (config.branding?.logo ? {
   }
 
   .footer-section-title {
-    font-size: 0.75rem;
+    font-size: 0.6875rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -377,7 +377,7 @@ const footerLogo = footer?.logo ?? (config.branding?.logo ? {
   }
 
   .footer-link {
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
     color: var(--muted-foreground);
     text-decoration: none;
     transition: color 0.2s ease;
@@ -436,21 +436,15 @@ const footerLogo = footer?.logo ?? (config.branding?.logo ? {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 2.25rem;
-    height: 2.25rem;
-    border-radius: 0.5rem;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.375rem;
     color: var(--muted-foreground);
-    background-color: var(--muted);
-    transition: all 0.2s ease;
+    transition: color 0.15s ease;
   }
 
   .footer-social-link:hover {
     color: var(--foreground);
-    background-color: var(--primary-100);
-  }
-
-  :global(.dark) .footer-social-link:hover {
-    background-color: var(--primary-900);
   }
 
   /* Compact Layout */
@@ -523,7 +517,7 @@ const footerLogo = footer?.logo ?? (config.branding?.logo ? {
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    font-size: 0.875rem;
+    font-size: 0.75rem;
     color: var(--muted-foreground);
   }
 
@@ -554,7 +548,7 @@ const footerLogo = footer?.logo ?? (config.branding?.logo ? {
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    font-size: 0.875rem;
+    font-size: 0.75rem;
   }
 
   @media (min-width: 768px) {

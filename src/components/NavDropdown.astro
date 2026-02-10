@@ -1,0 +1,164 @@
+---
+import type { NavLink } from '../types/config';
+import { createLink } from '../utils/url';
+import Icon from './Icon.astro';
+
+interface Props {
+  link: NavLink;
+}
+
+const { link } = Astro.props;
+---
+
+<div class="nav-dropdown-wrapper">
+  <button class="nav-dropdown-trigger" aria-expanded="false" aria-haspopup="true">
+    <span>{link.label}</span>
+    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-dropdown-chevron">
+      <path d="m6 9 6 6 6-6"/>
+    </svg>
+  </button>
+
+  <div class="nav-dropdown-menu" role="menu">
+    {link.items?.map((item) => (
+      <a
+        href={createLink(item.href)}
+        class="nav-dropdown-item"
+        role="menuitem"
+        target={item.href.startsWith('http') ? '_blank' : undefined}
+        rel={item.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+      >
+        {item.icon && <Icon name={item.icon} size={18} class="nav-dropdown-item-icon" />}
+        <div class="nav-dropdown-item-content">
+          <span class="nav-dropdown-item-label">{item.label}</span>
+          {item.description && <span class="nav-dropdown-item-desc">{item.description}</span>}
+        </div>
+      </a>
+    ))}
+  </div>
+</div>
+
+<style>
+  @reference "../styles/global.css";
+
+  .nav-dropdown-wrapper {
+    position: relative;
+  }
+
+  .nav-dropdown-trigger {
+    @apply flex items-center gap-1 text-sm font-medium text-muted-foreground;
+    @apply px-3 py-2 rounded-md;
+    @apply transition-colors duration-150;
+  }
+
+  .nav-dropdown-trigger:hover {
+    @apply text-foreground;
+  }
+
+  .nav-dropdown-chevron {
+    @apply transition-transform duration-150;
+    opacity: 0.5;
+  }
+
+  .nav-dropdown-wrapper.open .nav-dropdown-chevron {
+    transform: rotate(180deg);
+  }
+
+  .nav-dropdown-menu {
+    @apply absolute top-full left-0 mt-1 py-1.5;
+    @apply rounded-lg;
+    min-width: 220px;
+    background: var(--popover);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-4px);
+    transition: opacity 150ms ease, transform 150ms ease, visibility 150ms ease;
+    z-index: 60;
+  }
+
+  .nav-dropdown-wrapper.open .nav-dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+
+  .nav-dropdown-item {
+    @apply flex items-start gap-3 px-3 py-2 mx-1.5 rounded-md;
+    @apply transition-colors duration-100;
+    text-decoration: none;
+  }
+
+  .nav-dropdown-item:hover {
+    background: var(--accent);
+  }
+
+  .nav-dropdown-item-icon {
+    @apply flex-shrink-0 mt-0.5;
+    color: var(--muted-foreground);
+  }
+
+  .nav-dropdown-item:hover .nav-dropdown-item-icon {
+    color: var(--foreground);
+  }
+
+  .nav-dropdown-item-content {
+    @apply flex flex-col;
+  }
+
+  .nav-dropdown-item-label {
+    @apply text-sm font-medium;
+    color: var(--foreground);
+  }
+
+  .nav-dropdown-item-desc {
+    @apply text-xs mt-0.5;
+    color: var(--muted-foreground);
+  }
+</style>
+
+<script>
+  function initDropdowns() {
+    document.querySelectorAll('.nav-dropdown-wrapper').forEach((wrapper) => {
+      const trigger = wrapper.querySelector('.nav-dropdown-trigger');
+      if (!trigger) return;
+
+      trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = wrapper.classList.contains('open');
+
+        // Close all dropdowns first
+        document.querySelectorAll('.nav-dropdown-wrapper.open').forEach((w) => {
+          w.classList.remove('open');
+          w.querySelector('.nav-dropdown-trigger')?.setAttribute('aria-expanded', 'false');
+        });
+
+        if (!isOpen) {
+          wrapper.classList.add('open');
+          trigger.setAttribute('aria-expanded', 'true');
+        }
+      });
+    });
+
+    // Close on outside click
+    document.addEventListener('click', () => {
+      document.querySelectorAll('.nav-dropdown-wrapper.open').forEach((w) => {
+        w.classList.remove('open');
+        w.querySelector('.nav-dropdown-trigger')?.setAttribute('aria-expanded', 'false');
+      });
+    });
+
+    // Close on Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.nav-dropdown-wrapper.open').forEach((w) => {
+          w.classList.remove('open');
+          w.querySelector('.nav-dropdown-trigger')?.setAttribute('aria-expanded', 'false');
+        });
+      }
+    });
+  }
+
+  initDropdowns();
+  document.addEventListener('astro:page-load', initDropdowns);
+</script>

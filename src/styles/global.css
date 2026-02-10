@@ -164,18 +164,13 @@ body {
    Component Styles
    ============================================ */
 
-/* Topbar - Fixed header with gradient */
+/* Topbar - Fixed header */
 .topbar {
   @apply fixed top-0 left-0 right-0 z-50;
-  background: linear-gradient(
-    to bottom,
-    oklch(from var(--background) l c h / 0.97),
-    oklch(from var(--background) l c h / 0.92)
-  );
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  background: oklch(from var(--background) l c h / 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
-  box-shadow: var(--shadow-sm);
 }
 
 /* Layout container */
@@ -185,68 +180,71 @@ body {
 
 /* Sidebar - Fixed left navigation */
 .sidebar {
-  @apply fixed left-0 top-16 h-[calc(100vh-4rem)] w-72 overflow-y-auto;
-  @apply hidden md:block;
-  background: var(--sidebar);
+  @apply fixed left-0 top-16 h-[calc(100vh-4rem)] w-72 z-20;
+  @apply hidden md:flex md:flex-col;
+  background: var(--background);
   border-right: 1px solid var(--sidebar-border);
-  box-shadow: var(--shadow-xs);
+}
+
+.sidebar > nav {
+  @apply flex-1 overflow-y-auto;
+}
+
+/* Sidebar switchers (version + language) at the top */
+.sidebar-switchers {
+  @apply flex items-center gap-2 px-3 py-2.5;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-switchers:empty {
+  @apply hidden;
+}
+
+/* Override dropdown positioning inside sidebar */
+.sidebar-switchers .version-dropdown {
+  left: 0;
+  right: auto;
+}
+
+.sidebar-switchers .language-switcher [data-lang-dropdown] {
+  left: 0;
+  right: auto;
+}
+
+/* Sidebar social links at the bottom */
+.sidebar-social {
+  @apply flex items-center gap-1 px-3 py-2.5;
+  border-top: 1px solid var(--border);
+}
+
+.sidebar-social-link {
+  @apply flex items-center justify-center w-8 h-8 rounded-md;
+  @apply transition-colors duration-150;
+  color: var(--muted-foreground);
+}
+
+.sidebar-social-link:hover {
+  color: var(--foreground);
+  background: var(--accent);
 }
 
 /* Sidebar navigation link */
 .sidebar-link {
-  @apply flex items-center gap-3 px-4 py-2.5 text-sm rounded-md;
-  @apply transition-all duration-150 ease-out;
+  @apply flex items-center gap-2 px-3 py-1.5 rounded-sm;
+  @apply transition-colors duration-150;
   color: var(--sidebar-foreground);
-  margin: 0.125rem 0.5rem;
-  position: relative;
-}
-
-.sidebar-link::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 3px;
-  height: 0;
-  background: var(--sidebar-primary);
-  border-radius: 0 2px 2px 0;
-  transition: height 150ms ease;
+  margin: 1px 0.5rem;
+  font-size: 0.8125rem;
 }
 
 .sidebar-link:hover {
-  background: var(--sidebar-accent);
   color: var(--foreground);
-  transform: translateX(2px);
-}
-
-.sidebar-link:hover::before {
-  height: 50%;
 }
 
 /* Active sidebar link */
 .sidebar-link-active {
-  @apply font-semibold;
-  background: linear-gradient(
-    90deg,
-    var(--primary-100),
-    var(--primary-50)
-  );
-  color: var(--primary-700);
-  box-shadow: var(--shadow-xs);
-}
-
-.sidebar-link-active::before {
-  height: 70%;
-}
-
-.dark .sidebar-link-active {
-  background: linear-gradient(
-    90deg,
-    var(--primary-200),
-    var(--primary-100)
-  );
-  color: var(--primary-800);
+  @apply font-medium;
+  color: var(--foreground);
 }
 
 /* Search input */
@@ -260,7 +258,6 @@ body {
 .search-input:focus {
   outline: none;
   border-color: var(--primary-400);
-  box-shadow: 0 0 0 3px var(--primary-100);
 }
 
 .search-input::placeholder {
@@ -272,6 +269,8 @@ body {
   @apply min-h-screen flex flex-col flex-1;
   margin-left: 0;
   margin-right: 0;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 @media (min-width: 768px) {
@@ -282,22 +281,57 @@ body {
 
 @media (min-width: 1024px) {
   .main-content {
+    margin-left: 18rem;
     margin-right: 16rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 }
 
 /* Content wrapper */
 .content-wrapper {
-  @apply flex flex-1 gap-4 md:gap-8 max-w-full;
+  @apply flex flex-1 gap-4 md:gap-8;
+  max-width: 100%;
   overflow-x: hidden;
+  min-width: 0;
 }
 
 /* Documentation prose styling */
 .docs-prose {
-  @apply prose lg:prose-lg max-w-none flex-1;
-  padding: 2rem 1.5rem;
+  @apply prose max-w-none;
+  padding: 2rem 1rem;
   overflow-x: hidden;
   min-width: 0;
+  width: 100%;
+  max-width: 52rem;
+  line-height: 1.75;
+  color: var(--muted-foreground);
+  box-sizing: border-box;
+}
+
+@media (min-width: 480px) {
+  .docs-prose {
+    padding: 2rem 1.5rem;
+  }
+}
+
+/* Article footer meta (last updated + edit link) */
+.article-footer-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+@media (max-width: 640px) {
+  .article-footer-meta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 
 /* Article header with breadcrumbs and copy button */
@@ -305,28 +339,44 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.5rem;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+@media (max-width: 640px) {
+  .article-header {
+    gap: 0.25rem;
+  }
 }
 
 @media (min-width: 768px) {
   .docs-prose {
-    padding: 3rem 2.5rem;
+    padding: 3rem 3rem;
   }
 }
 
 @media (min-width: 1024px) {
   .docs-prose {
-    padding: 3.5rem 3rem;
+    padding: 4rem 3.5rem;
+  }
+}
+
+/* Force all direct children to respect container width on mobile */
+@media (max-width: 767px) {
+  .docs-prose > * {
+    max-width: 100%;
+    overflow-x: auto;
   }
 }
 
 .docs-prose img {
-  @apply rounded-lg border border-border shadow-sm my-8;
+  @apply rounded-lg border border-border my-8;
+  max-width: 100%;
+  height: auto;
 }
 
 .docs-prose pre {
-  @apply rounded-lg border border-border shadow-sm overflow-x-auto;
+  @apply rounded-lg border border-border overflow-x-auto;
   max-width: 100%;
 }
 
@@ -338,110 +388,142 @@ body {
 }
 
 .docs-prose :not(pre)>code {
-  @apply rounded-md px-1.5 py-0.5 bg-muted border border-border text-foreground font-medium text-sm;
+  @apply rounded-sm px-1.5 py-0.5 font-medium;
+  font-size: 0.875em;
   font-family: var(--font-mono);
   word-break: break-word;
+  background: var(--primary-50);
+  color: var(--primary-700);
+  border: 1px solid var(--primary-200);
 }
 
-/* Links with animated underline */
-.docs-prose a:not(.no-underline) {
+/* Remove Tailwind prose backtick pseudo-elements around inline code */
+.docs-prose :not(pre)>code::before,
+.docs-prose :not(pre)>code::after {
+  content: none !important;
+}
+
+.dark .docs-prose :not(pre)>code {
+  background: var(--primary-950);
+  color: var(--primary-300);
+  border-color: var(--primary-800);
+}
+
+/* Tables — responsive */
+.docs-prose table {
+  display: table;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.docs-prose thead th {
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted-foreground);
+  padding: 0.625rem 1rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--muted);
+  white-space: nowrap;
+}
+
+.docs-prose tbody td {
+  padding: 0.625rem 1rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.docs-prose tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Responsive table scroll wrapper (injected via JS) */
+.table-scroll-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 1.5em 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.table-scroll-wrapper table {
+  margin: 0 !important;
+  border: none;
+  font-size: 0.875rem;
+}
+
+/* Prose links */
+.docs-prose a:not(.no-underline):not(.card-component) {
   @apply text-primary-600 font-medium;
-  text-decoration: none;
-  position: relative;
-  background-image: linear-gradient(to right, var(--primary-500), var(--primary-500));
-  background-position: 0 100%;
-  background-size: 0 1.5px;
-  background-repeat: no-repeat;
-  transition: background-size 200ms cubic-bezier(0.4, 0, 0.2, 1), color 150ms ease;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  text-decoration-color: var(--primary-300);
+  transition: color 150ms ease, text-decoration-color 150ms ease;
 }
 
-.docs-prose a:not(.no-underline):hover {
+.docs-prose a:not(.no-underline):not(.card-component):hover {
   @apply text-primary-700;
-  background-size: 100% 1.5px;
+  text-decoration-color: var(--primary-500);
 }
 
-.dark .docs-prose a:not(.no-underline) {
-  @apply text-primary-500;
-}
-
-.dark .docs-prose a:not(.no-underline):hover {
+.dark .docs-prose a:not(.no-underline):not(.card-component) {
   @apply text-primary-400;
+  text-decoration-color: var(--primary-300);
 }
 
-/* Feature card with enhanced hover */
+.dark .docs-prose a:not(.no-underline):not(.card-component):hover {
+  @apply text-primary-300;
+  text-decoration-color: var(--primary-400);
+}
+
+/* Feature card */
 .feature-card {
-  @apply relative overflow-hidden rounded-lg p-6 transition-all duration-200;
+  @apply relative overflow-hidden rounded-lg p-6;
+  @apply transition-colors duration-150;
   background-color: var(--card);
   border: 1px solid var(--border);
-  box-shadow: var(--shadow-xs);
 }
 
 .feature-card:hover {
   border-color: var(--primary-300);
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
+  background: var(--accent);
 }
 
 .dark .feature-card:hover {
   border-color: var(--primary-400);
-  box-shadow: var(--shadow-primary);
 }
 
-/* CTA Button with gradient */
+/* CTA Button */
 .cta-button {
-  @apply px-5 py-2.5 font-semibold rounded-lg;
-  @apply transition-all duration-150 ease-out;
-  background: linear-gradient(
-    135deg,
-    var(--primary-500),
-    var(--primary-600)
-  );
+  @apply px-4 py-2 font-medium rounded-lg text-sm;
+  @apply transition-colors duration-150;
+  background: var(--primary-500);
   color: var(--primary-foreground);
-  box-shadow: var(--shadow-sm);
-  position: relative;
-  overflow: hidden;
-}
-
-.cta-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    oklch(1 0 0 / 0.15),
-    transparent
-  );
-  transition: left 400ms ease;
 }
 
 .cta-button:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md), 0 0 0 3px var(--primary-100);
-}
-
-.cta-button:hover::before {
-  left: 100%;
+  background: var(--primary-600);
 }
 
 .cta-button:active {
-  transform: translateY(0);
-  box-shadow: var(--shadow-xs);
+  background: var(--primary-700);
 }
 
 /* Glass effect utility */
 .glass-effect {
-  @apply backdrop-blur-lg;
-  background: oklch(from var(--background) l c h / 0.5);
-  border: 1px solid oklch(from var(--border) l c h / 0.5);
+  @apply backdrop-blur-md;
+  background: oklch(from var(--background) l c h / 0.8);
+  border: 1px solid var(--border);
 }
 
 /* Sidebar group header */
 .sidebar-group-header {
-  @apply px-4 py-2 text-xs font-semibold uppercase;
+  @apply px-4 py-2 text-xs font-medium uppercase;
   color: var(--muted-foreground);
   letter-spacing: 0.05em;
   transition: color 150ms ease;
@@ -453,7 +535,7 @@ body {
 
 /* Table of Contents - Fixed right sidebar */
 .toc {
-  @apply fixed right-0 top-16 h-[calc(100vh-4rem)] w-64 py-6 px-4 overflow-y-auto;
+  @apply fixed right-0 top-16 h-[calc(100vh-4rem)] w-64 py-6 px-4 overflow-y-auto z-20;
   @apply hidden lg:block;
   background: var(--background);
 }
@@ -479,14 +561,9 @@ lite-youtube {
    Focus States - Accessible
    ============================================ */
 *:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--primary-500);
+  outline: 2px solid var(--primary-500);
+  outline-offset: 2px;
   border-radius: var(--radius-sm);
-}
-
-button:focus-visible,
-a:focus-visible {
-  box-shadow: 0 0 0 3px var(--primary-100), 0 0 0 1px var(--primary-500);
 }
 
 /* ============================================
@@ -565,17 +642,6 @@ a:focus-visible {
   .toc {
     right: auto;
     left: 0;
-  }
-
-  /* Flip sidebar link indicator */
-  .sidebar-link::before {
-    left: auto;
-    right: 0;
-    border-radius: 2px 0 0 2px;
-  }
-
-  .sidebar-link:hover {
-    transform: translateX(-2px);
   }
 
   /* Flip text alignment where needed */

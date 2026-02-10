@@ -1,0 +1,133 @@
+---
+/**
+ * PageFeedback - "Was this helpful?" widget with thumbs up/down
+ *
+ * Client-side: stores feedback in localStorage, optionally POSTs to webhookUrl.
+ */
+import Icon from './Icon.astro';
+import { getConfigFile } from '../utils/config';
+import { t, getI18nConfig, getLocaleFromPath } from '../utils/i18n';
+
+const config = await getConfigFile();
+const feedbackConfig = config.integrations?.feedback;
+
+if (!feedbackConfig?.enabled) {
+  return null;
+}
+
+const i18nConfig = await getI18nConfig();
+const currentLocale = getLocaleFromPath(Astro.url.pathname, i18nConfig.locales) || i18nConfig.defaultLocale;
+
+const helpfulLabel = await t('feedback.helpful', currentLocale);
+const yesLabel = await t('feedback.yes', currentLocale);
+const noLabel = await t('feedback.no', currentLocale);
+const thankYouLabel = await t('feedback.thankYou', currentLocale);
+
+const webhookUrl = feedbackConfig.webhookUrl || '';
+---
+
+<div class="page-feedback" id="page-feedback" data-webhook={webhookUrl} data-thank-you={thankYouLabel}>
+  <span class="feedback-label">{helpfulLabel}</span>
+  <div class="feedback-buttons">
+    <button class="feedback-btn" data-helpful="true" aria-label={yesLabel}>
+      <Icon name="lucide:thumbs-up" size={16} />
+      <span>{yesLabel}</span>
+    </button>
+    <button class="feedback-btn" data-helpful="false" aria-label={noLabel}>
+      <Icon name="lucide:thumbs-down" size={16} />
+      <span>{noLabel}</span>
+    </button>
+  </div>
+</div>
+
+<script>
+  const container = document.getElementById('page-feedback');
+  if (container) {
+    const webhookUrl = container.dataset.webhook;
+    const thankYouMsg = container.dataset.thankYou || 'Thanks for your feedback!';
+    const page = window.location.pathname;
+
+    // Check if already submitted
+    const storageKey = `feedback-${page}`;
+    if (localStorage.getItem(storageKey)) {
+      showThankYou();
+    }
+
+    container.querySelectorAll('.feedback-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const helpful = (btn as HTMLElement).dataset.helpful === 'true';
+
+        // Store in localStorage
+        localStorage.setItem(storageKey, helpful ? 'yes' : 'no');
+
+        // Show thank you state
+        showThankYou();
+
+        // Fire-and-forget POST if webhook configured
+        if (webhookUrl) {
+          fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ page, helpful, timestamp: new Date().toISOString() }),
+          }).catch(() => {});
+        }
+      });
+    });
+
+    function showThankYou() {
+      const buttons = container!.querySelector('.feedback-buttons');
+      const label = container!.querySelector('.feedback-label');
+      if (buttons) buttons.remove();
+      if (label) {
+        label.textContent = thankYouMsg;
+        label.classList.add('thank-you');
+      }
+    }
+  }
+</script>
+
+<style>
+  .page-feedback {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 0;
+    font-family: var(--font-sans);
+  }
+
+  .feedback-label {
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+    transition: color 0.15s ease;
+  }
+
+  .feedback-label.thank-you {
+    color: var(--success);
+  }
+
+  .feedback-buttons {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .feedback-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--muted-foreground);
+    background: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .feedback-btn:hover {
+    color: var(--foreground);
+    background: var(--accent);
+    border-color: var(--primary-300);
+  }
+</style>

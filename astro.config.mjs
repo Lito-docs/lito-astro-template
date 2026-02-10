@@ -10,6 +10,7 @@ import sitemap from 'astro-sitemap';
 import compress from '@playform/compress';
 import partytown from '@astrojs/partytown';
 import remarkGithubAlerts from './src/plugins/remark-github-alerts.js';
+import { remarkLastModified } from './src/plugins/remark-last-modified.js';
 
 // https://astro.build/config
 export default defineConfig({
@@ -95,7 +96,7 @@ export default defineConfig({
   ],
 
   markdown: {
-    remarkPlugins: [remarkGithubAlerts],
+    remarkPlugins: [remarkGithubAlerts, remarkLastModified],
   },
 
   vite: {

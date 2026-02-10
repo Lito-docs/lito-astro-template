@@ -6,19 +6,23 @@ import Breadcrumbs from '../components/Breadcrumbs.astro';
 import PrevNextNav from '../components/PrevNextNav.astro';
 import VersionBanner from '../components/VersionBanner.astro';
 import CopyPageButton from '../components/CopyPageButton.astro';
+import EditPageLink from '../components/EditPageLink.astro';
+import LastUpdated from '../components/LastUpdated.astro';
+import PageFeedback from '../components/PageFeedback.astro';
 import type { SEOFrontmatter } from '../types/seo';
 import { getConfigFile } from '../utils/config';
 
 interface Props {
   title: string;
   description?: string;
+  sourceFile?: string;
   frontmatter?: SEOFrontmatter & {
     title?: string;
     description?: string;
   };
 }
 
-const { frontmatter } = Astro.props;
+const { frontmatter, sourceFile } = Astro.props;
 const title = Astro.props.title || frontmatter?.title || '';
 const description = Astro.props.description || frontmatter?.description;
 
@@ -71,9 +75,30 @@ if (!found && currentSlug) {
       </div>
       <VersionBanner />
       <slot />
+      <div class="article-footer-meta">
+        <LastUpdated frontmatter={frontmatter} />
+        <EditPageLink sourceFile={sourceFile} />
+      </div>
+      <PageFeedback />
       <PrevNextNav />
     </article>
     <Footer />
   </main>
   <TableOfContents />
 </Layout>
+
+<script>
+  function wrapTables() {
+    const prose = document.querySelector('.docs-prose');
+    if (!prose) return;
+    prose.querySelectorAll('table').forEach((table) => {
+      if (table.parentElement?.classList.contains('table-scroll-wrapper')) return;
+      const wrapper = document.createElement('div');
+      wrapper.className = 'table-scroll-wrapper';
+      table.parentNode?.insertBefore(wrapper, table);
+      wrapper.appendChild(table);
+    });
+  }
+  wrapTables();
+  document.addEventListener('astro:page-load', wrapTables);
+</script>

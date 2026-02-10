@@ -35,6 +35,7 @@ const defaultTranslations: Record<string, Record<string, string>> = {
     'feedback.helpful': 'Was this page helpful?',
     'feedback.yes': 'Yes',
     'feedback.no': 'No',
+    'feedback.thankYou': 'Thanks for your feedback!',
   },
   es: {
     'nav.home': 'Inicio',
@@ -64,6 +65,7 @@ const defaultTranslations: Record<string, Record<string, string>> = {
     'feedback.helpful': '¿Te fue útil esta página?',
     'feedback.yes': 'Sí',
     'feedback.no': 'No',
+    'feedback.thankYou': '¡Gracias por tus comentarios!',
   },
   fr: {
     'nav.home': 'Accueil',
@@ -93,6 +95,7 @@ const defaultTranslations: Record<string, Record<string, string>> = {
     'feedback.helpful': 'Cette page vous a-t-elle été utile?',
     'feedback.yes': 'Oui',
     'feedback.no': 'Non',
+    'feedback.thankYou': 'Merci pour vos commentaires!',
   },
   de: {
     'nav.home': 'Startseite',
@@ -122,6 +125,7 @@ const defaultTranslations: Record<string, Record<string, string>> = {
     'feedback.helpful': 'War diese Seite hilfreich?',
     'feedback.yes': 'Ja',
     'feedback.no': 'Nein',
+    'feedback.thankYou': 'Danke für Ihr Feedback!',
   },
   ja: {
     'nav.home': 'ホーム',
@@ -143,6 +147,7 @@ const defaultTranslations: Record<string, Record<string, string>> = {
     'feedback.helpful': 'このページは役に立ちましたか?',
     'feedback.yes': 'はい',
     'feedback.no': 'いいえ',
+    'feedback.thankYou': 'フィードバックありがとうございます！',
   },
   zh: {
     'nav.home': '首页',
@@ -164,6 +169,7 @@ const defaultTranslations: Record<string, Record<string, string>> = {
     'feedback.helpful': '此页面对您有帮助吗?',
     'feedback.yes': '是',
     'feedback.no': '否',
+    'feedback.thankYou': '感谢您的反馈！',
   },
   ko: {
     'nav.home': '홈',
@@ -185,6 +191,7 @@ const defaultTranslations: Record<string, Record<string, string>> = {
     'feedback.helpful': '이 페이지가 도움이 되었나요?',
     'feedback.yes': '예',
     'feedback.no': '아니오',
+    'feedback.thankYou': '피드백 감사합니다!',
   },
   pt: {
     'nav.home': 'Início',
@@ -206,6 +213,7 @@ const defaultTranslations: Record<string, Record<string, string>> = {
     'feedback.helpful': 'Esta página foi útil?',
     'feedback.yes': 'Sim',
     'feedback.no': 'Não',
+    'feedback.thankYou': 'Obrigado pelo seu feedback!',
   },
 };
 

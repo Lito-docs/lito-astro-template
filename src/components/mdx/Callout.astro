@@ -90,19 +90,11 @@ const isIconifyIcon = displayIcon?.includes(':');
 <style>
   @reference "../../styles/global.css";
   .callout {
-    @apply flex gap-4 p-5 my-6 rounded-lg border;
-    box-shadow: var(--shadow-sm);
-    transition: all 150ms ease;
-  }
-
-  .callout:hover {
-    box-shadow: var(--shadow-md);
-    transform: translateY(-1px);
+    @apply flex gap-4 p-4 my-6 rounded-lg border;
   }
 
   .callout-icon {
-    @apply flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-lg;
-    box-shadow: var(--shadow-xs);
+    @apply flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-lg;
   }
 
   .callout-content {

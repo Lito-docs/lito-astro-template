@@ -82,6 +82,13 @@ export function getDefaultConfig(): DocsConfig {
             feedback: {
                 enabled: false,
             },
+            editPage: {
+                enabled: false,
+            },
+            lastUpdated: {
+                enabled: false,
+                format: 'long',
+            },
         },
         seo: {
             ogImage: '/og-image.png',

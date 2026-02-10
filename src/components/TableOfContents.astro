@@ -57,22 +57,21 @@ const tocEmpty = t['toc.empty'] || 'No headings';
   
   .toc-link {
     display: block;
-    padding: 0.5rem 0.75rem;
+    padding: 0.35rem 0.75rem;
     font-size: 0.8rem;
     line-height: 1.5;
     @apply text-muted-foreground;
     text-decoration: none;
-    transition: all 0.15s ease;
+    transition: color 0.15s ease;
   }
-  
+
   .toc-link:hover {
-    @apply text-muted-foreground bg-sidebar-accent/30 border-l-sidebar-primary/50;
-    border-radius: 0 var(--radius) var(--radius) 0;
+    @apply text-foreground;
   }
-  
+
   .toc-link.active {
-    @apply text-muted-foreground bg-muted/40 rounded border-l-3 border-sidebar-primary pl-3;
-    font-weight: 600;
+    @apply text-foreground;
+    font-weight: 500;
   }
   
   .toc-empty {

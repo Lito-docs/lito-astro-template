@@ -16,14 +16,14 @@ const showSwitcher = locales.length > 1;
 ---
 
 {showSwitcher && (
-  <div class="language-switcher relative">
+  <div class="language-switcher relative" data-lang-switcher>
     <button
-      id="language-switcher-btn"
       type="button"
       class="flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors hover:bg-muted"
       aria-label="Select language"
       aria-haspopup="listbox"
       aria-expanded="false"
+      data-lang-btn
     >
       <Icon name="lucide:globe" class="w-4 h-4" />
       <span class="hidden sm:inline">{displayNames[currentLocale] || currentLocale.toUpperCase()}</span>
@@ -31,10 +31,10 @@ const showSwitcher = locales.length > 1;
     </button>
 
     <div
-      id="language-dropdown"
       class="absolute right-0 top-full mt-1 min-w-[160px] py-1 bg-popover border border-border rounded-lg shadow-lg opacity-0 invisible transition-all duration-150 z-50"
       role="listbox"
       aria-label="Available languages"
+      data-lang-dropdown
     >
       {locales.map((locale) => {
         const isActive = locale === currentLocale;
@@ -63,42 +63,48 @@ const showSwitcher = locales.length > 1;
 )}
 
 <script>
-  const btn = document.getElementById('language-switcher-btn');
-  const dropdown = document.getElementById('language-dropdown');
+  function initLanguageSwitchers() {
+    document.querySelectorAll('[data-lang-switcher]').forEach((switcher) => {
+      const btn = switcher.querySelector('[data-lang-btn]') as HTMLButtonElement;
+      const dropdown = switcher.querySelector('[data-lang-dropdown]') as HTMLElement;
+      if (!btn || !dropdown) return;
 
-  if (btn && dropdown) {
-    btn.addEventListener('click', () => {
-      const isOpen = dropdown.classList.contains('opacity-100');
+      btn.addEventListener('click', () => {
+        const isOpen = dropdown.classList.contains('opacity-100');
 
-      if (isOpen) {
-        dropdown.classList.remove('opacity-100', 'visible');
-        dropdown.classList.add('opacity-0', 'invisible');
-        btn.setAttribute('aria-expanded', 'false');
-      } else {
-        dropdown.classList.remove('opacity-0', 'invisible');
-        dropdown.classList.add('opacity-100', 'visible');
-        btn.setAttribute('aria-expanded', 'true');
-      }
-    });
+        if (isOpen) {
+          dropdown.classList.remove('opacity-100', 'visible');
+          dropdown.classList.add('opacity-0', 'invisible');
+          btn.setAttribute('aria-expanded', 'false');
+        } else {
+          dropdown.classList.remove('opacity-0', 'invisible');
+          dropdown.classList.add('opacity-100', 'visible');
+          btn.setAttribute('aria-expanded', 'true');
+        }
+      });
 
-    // Close on click outside
-    document.addEventListener('click', (e) => {
-      if (!btn.contains(e.target as Node) && !dropdown.contains(e.target as Node)) {
-        dropdown.classList.remove('opacity-100', 'visible');
-        dropdown.classList.add('opacity-0', 'invisible');
-        btn.setAttribute('aria-expanded', 'false');
-      }
-    });
+      // Close on click outside
+      document.addEventListener('click', (e) => {
+        if (!switcher.contains(e.target as Node)) {
+          dropdown.classList.remove('opacity-100', 'visible');
+          dropdown.classList.add('opacity-0', 'invisible');
+          btn.setAttribute('aria-expanded', 'false');
+        }
+      });
 
-    // Close on escape
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        dropdown.classList.remove('opacity-100', 'visible');
-        dropdown.classList.add('opacity-0', 'invisible');
-        btn.setAttribute('aria-expanded', 'false');
-      }
+      // Close on escape
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          dropdown.classList.remove('opacity-100', 'visible');
+          dropdown.classList.add('opacity-0', 'invisible');
+          btn.setAttribute('aria-expanded', 'false');
+        }
+      });
     });
   }
+
+  initLanguageSwitchers();
+  document.addEventListener('astro:page-load', initLanguageSwitchers);
 </script>
 
 <style>

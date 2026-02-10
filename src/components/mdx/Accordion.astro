@@ -43,13 +43,13 @@ const isIconifyIcon = icon?.includes(':');
 <style>
   @reference "../../styles/global.css";
   .accordion {
-    @apply my-4 rounded border border-border bg-card overflow-hidden;
+    @apply my-4 rounded-lg border border-border bg-card overflow-hidden;
   }
-  
+
   .accordion-header {
     @apply flex items-center justify-between px-4 py-3 cursor-pointer;
     @apply text-foreground font-medium text-sm;
-    @apply hover:bg-muted transition-colors;
+    @apply hover:bg-accent transition-colors duration-150;
     @apply list-none;
   }
   

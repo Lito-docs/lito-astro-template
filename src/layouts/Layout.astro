@@ -1,5 +1,7 @@
 ---
 import Header from '../components/Header.astro';
+import NavTabs from '../components/NavTabs.astro';
+import AnnouncementBar from '../components/AnnouncementBar.astro';
 import Sidebar from '../components/Sidebar.astro';
 import MobileNav from '../components/MobileNav.astro';
 import SearchModal from '../components/SearchModal.astro';
@@ -28,10 +30,16 @@ const i18nConfig = await getI18nConfig();
 const detectedLocale = getLocaleFromPath(currentPath, i18nConfig.locales);
 const currentLocale = Astro.props.lang || detectedLocale || i18nConfig.defaultLocale;
 const isRtl = isRTL(currentLocale);
+
+// Announcement & tabs config
+const announcement = config.announcement;
+const showAnnouncement = announcement?.enabled && announcement?.text;
+const navTabs = config.navigation.navbar.tabs;
+const hasTabs = navTabs && navTabs.length > 0;
 ---
 
 <!doctype html>
-<html lang={currentLocale} dir={isRtl ? 'rtl' : 'ltr'} class="dark">
+<html lang={currentLocale} dir={isRtl ? 'rtl' : 'ltr'} class="dark" data-has-tabs={hasTabs ? 'true' : undefined}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -64,20 +72,37 @@ const isRtl = isRTL(currentLocale);
     </script>
   </head>
   <body class="bg-background text-foreground font-sans antialiased">
+    {showAnnouncement && <AnnouncementBar config={announcement} />}
     <Header />
+    {hasTabs && <NavTabs tabs={navTabs} />}
     <MobileNav />
     <SearchModal />
-    
+
     <div class={showSidebar ? "layout-container" : ""}>
       {showSidebar && <Sidebar />}
       <slot />
     </div>
-    
+
     <style is:global>
       @reference '../styles/global.css';
 
       code, pre {
         font-family: 'Fira Code', 'Courier New', monospace !important;
+      }
+
+      /* Dynamic header height based on tabs */
+      html[data-has-tabs] .sidebar {
+        top: 7rem;
+        height: calc(100vh - 7rem);
+      }
+
+      html[data-has-tabs] .toc {
+        top: 7rem;
+        height: calc(100vh - 7rem);
+      }
+
+      html[data-has-tabs] .main-content {
+        padding-top: 7rem;
       }
     </style>
   </body>

@@ -1,0 +1,150 @@
+---
+import type { AnnouncementConfig } from '../types/config';
+
+interface Props {
+  config: AnnouncementConfig;
+}
+
+const { config } = Astro.props;
+const variant = config.variant || 'default';
+const dismissible = config.dismissible !== false;
+const storageKey = `lito-announcement-${config.text?.slice(0, 20).replace(/\s+/g, '-')}`;
+---
+
+<div
+  class:list={['announcement-bar', `announcement-${variant}`]}
+  data-announcement
+  data-storage-key={storageKey}
+  data-dismissible={dismissible ? 'true' : 'false'}
+>
+  <div class="announcement-inner">
+    {config.href ? (
+      <a href={config.href} class="announcement-link">
+        <span class="announcement-text">{config.text}</span>
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="announcement-arrow">
+          <path d="M5 12h14"/>
+          <path d="m12 5 7 7-7 7"/>
+        </svg>
+      </a>
+    ) : (
+      <span class="announcement-text">{config.text}</span>
+    )}
+
+    {dismissible && (
+      <button class="announcement-dismiss" aria-label="Dismiss announcement" data-announcement-dismiss>
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 6 6 18"/>
+          <path d="m6 6 12 12"/>
+        </svg>
+      </button>
+    )}
+  </div>
+</div>
+
+<style>
+  @reference "../styles/global.css";
+
+  .announcement-bar {
+    @apply relative z-50;
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.8125rem;
+    text-align: center;
+  }
+
+  .announcement-bar[data-hidden] {
+    display: none;
+  }
+
+  .announcement-default {
+    background: var(--muted);
+    color: var(--foreground);
+  }
+
+  .announcement-info {
+    background: var(--info-light);
+    color: var(--info);
+    border-bottom-color: oklch(from var(--info) l c h / 0.15);
+  }
+
+  .announcement-success {
+    background: var(--success-light);
+    color: var(--success);
+    border-bottom-color: oklch(from var(--success) l c h / 0.15);
+  }
+
+  .announcement-warning {
+    background: var(--warning-light);
+    color: var(--warning);
+    border-bottom-color: oklch(from var(--warning) l c h / 0.15);
+  }
+
+  .announcement-inner {
+    @apply flex items-center justify-center gap-3;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .announcement-link {
+    @apply inline-flex items-center gap-1.5;
+    color: inherit;
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .announcement-link:hover {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .announcement-arrow {
+    @apply transition-transform duration-150;
+  }
+
+  .announcement-link:hover .announcement-arrow {
+    transform: translateX(2px);
+  }
+
+  .announcement-text {
+    font-weight: 500;
+  }
+
+  .announcement-dismiss {
+    @apply flex-shrink-0 p-1 rounded;
+    @apply transition-opacity duration-150;
+    opacity: 0.6;
+    color: inherit;
+  }
+
+  .announcement-dismiss:hover {
+    opacity: 1;
+  }
+</style>
+
+<script>
+  function initAnnouncement() {
+    document.querySelectorAll('[data-announcement]').forEach((bar) => {
+      const el = bar as HTMLElement;
+      const storageKey = el.dataset.storageKey || '';
+      const dismissible = el.dataset.dismissible === 'true';
+
+      // Check if already dismissed
+      if (dismissible && sessionStorage.getItem(storageKey) === 'dismissed') {
+        el.setAttribute('data-hidden', '');
+        return;
+      }
+
+      // Handle dismiss
+      const dismissBtn = el.querySelector('[data-announcement-dismiss]');
+      dismissBtn?.addEventListener('click', () => {
+        el.setAttribute('data-hidden', '');
+        if (storageKey) {
+          sessionStorage.setItem(storageKey, 'dismissed');
+        }
+      });
+    });
+  }
+
+  initAnnouncement();
+  document.addEventListener('astro:page-load', initAnnouncement);
+</script>

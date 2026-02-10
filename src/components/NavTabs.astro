@@ -1,0 +1,82 @@
+---
+import type { NavTab } from '../types/config';
+import { createLink } from '../utils/url';
+import Icon from './Icon.astro';
+
+interface Props {
+  tabs: NavTab[];
+}
+
+const { tabs } = Astro.props;
+const currentPath = Astro.url.pathname;
+
+const isTabActive = (tab: NavTab) => {
+  const match = tab.match || tab.href;
+  const normalizedPath = currentPath.replace(/\/$/, '') || '/';
+  const normalizedMatch = match.replace(/\/$/, '') || '/';
+  return normalizedPath === normalizedMatch || normalizedPath.startsWith(normalizedMatch + '/');
+};
+---
+
+<nav class="nav-tabs" aria-label="Section navigation">
+  <div class="nav-tabs-inner">
+    {tabs.map((tab) => (
+      <a
+        href={createLink(tab.href)}
+        class:list={['nav-tab', { 'nav-tab-active': isTabActive(tab) }]}
+        aria-current={isTabActive(tab) ? 'true' : undefined}
+      >
+        {tab.icon && <Icon name={tab.icon} size={14} class="nav-tab-icon" />}
+        <span>{tab.label}</span>
+      </a>
+    ))}
+  </div>
+</nav>
+
+<style>
+  @reference "../styles/global.css";
+
+  .nav-tabs {
+    @apply sticky z-40;
+    top: 4rem;
+    background: oklch(from var(--background) l c h / 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-tabs-inner {
+    @apply flex items-center gap-0 px-4 md:px-6 overflow-x-auto;
+    scrollbar-width: none;
+  }
+
+  .nav-tabs-inner::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav-tab {
+    @apply flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium whitespace-nowrap;
+    @apply transition-colors duration-150;
+    color: var(--muted-foreground);
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+  }
+
+  .nav-tab:hover {
+    color: var(--foreground);
+  }
+
+  .nav-tab-active {
+    color: var(--foreground);
+    border-bottom-color: var(--primary-500);
+  }
+
+  .nav-tab-icon {
+    opacity: 0.7;
+  }
+
+  .nav-tab-active .nav-tab-icon {
+    opacity: 1;
+  }
+</style>
