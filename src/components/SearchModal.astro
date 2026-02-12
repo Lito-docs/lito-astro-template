@@ -461,265 +461,259 @@ const navClose = t['search.close'] || 'Close';
 </style>
 
 <script is:inline define:vars={{ base }}>
-  let pagefind = null;
-  let selectedIndex = 0;
-  let results = [];
-  let isLoading = false;
-  let searchTimeout = null;
+  (function() {
+    var pagefind = null;
+    var selectedIndex = 0;
+    var results = [];
+    var isLoading = false;
+    var searchTimeout = null;
 
-  async function initSearch() {
-    const modal = document.getElementById("search-modal");
-    const backdrop = modal?.querySelector(".search-backdrop");
-    const input = document.getElementById("search-input");
-    const resultsContainer = document.getElementById("search-results");
-    const loadingEl = document.getElementById("search-loading");
+    function initSearch() {
+      var modal = document.getElementById("search-modal");
+      var backdrop = modal ? modal.querySelector(".search-backdrop") : null;
+      var input = document.getElementById("search-input");
+      var resultsContainer = document.getElementById("search-results");
+      var loadingEl = document.getElementById("search-loading");
 
-    // Get translations from data attributes
-    const searchTitle = modal?.dataset.searchTitle || 'Search the documentation';
-    const searchHint = modal?.dataset.searchHint || 'Start typing to find what you\'re looking for';
-    const searchNoResults = modal?.dataset.searchNoResults || 'No results found';
-    const searchNoResultsHint = modal?.dataset.searchNoResultsHint || 'Try different keywords or check your spelling';
-    const searchUnavailable = modal?.dataset.searchUnavailable || 'Search unavailable';
-    const searchBuildHint = modal?.dataset.searchBuildHint || 'Run build to generate the search index';
+      if (!modal) return;
 
-    // Try to load Pagefind
-    try {
-      const pagefindPath = base + "/pagefind/pagefind.js";
-      pagefind = await import(/* @vite-ignore */ pagefindPath);
-      await pagefind.init();
-    } catch (e) {
-      console.log("Pagefind not available (run build first to generate index)");
-    }
+      // Get translations from data attributes
+      var searchTitle = modal.dataset.searchTitle || 'Search the documentation';
+      var searchHint = modal.dataset.searchHint || 'Start typing to find what you\'re looking for';
+      var searchNoResults = modal.dataset.searchNoResults || 'No results found';
+      var searchNoResultsHint = modal.dataset.searchNoResultsHint || 'Try different keywords or check your spelling';
+      var searchUnavailable = modal.dataset.searchUnavailable || 'Search unavailable';
+      var searchBuildHint = modal.dataset.searchBuildHint || 'Run build to generate the search index';
 
-    function setLoading(loading) {
-      isLoading = loading;
-      if (loadingEl) {
-        loadingEl.classList.toggle("active", loading);
-      }
-    }
-
-    function openModal() {
-      modal?.classList.add("open");
-      document.body.style.overflow = "hidden";
-      setTimeout(() => input?.focus(), 50);
-    }
-
-    function closeModal() {
-      modal?.classList.remove("open");
-      document.body.style.overflow = "";
-      if (input) input.value = "";
-      renderEmpty();
-      results = [];
-      selectedIndex = 0;
-    }
-
-    function renderEmpty() {
-      if (!resultsContainer) return;
-      resultsContainer.innerHTML = `
-        <div class="search-empty">
-          <div class="search-empty-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="8"/>
-              <path d="m21 21-4.3-4.3"/>
-            </svg>
-          </div>
-          <p class="search-empty-text">${searchTitle}</p>
-          <p class="search-empty-hint">${searchHint}</p>
-        </div>
-      `;
-    }
-
-    function renderNoResults(query) {
-      if (!resultsContainer) return;
-      resultsContainer.innerHTML = `
-        <div class="search-no-results">
-          <div class="search-no-results-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="8"/>
-              <path d="m21 21-4.3-4.3"/>
-              <path d="M8 8l6 6M14 8l-6 6"/>
-            </svg>
-          </div>
-          <p class="search-no-results-text">${searchNoResults} "${query}"</p>
-          <p class="search-no-results-hint">${searchNoResultsHint}</p>
-        </div>
-      `;
-    }
-
-    function renderResults(searchResults) {
-      if (!resultsContainer) return;
-
-      if (searchResults.length === 0) {
-        renderNoResults(input?.value || "");
-        return;
-      }
-
-      const html = `
-        <div class="search-results-list">
-          ${searchResults
-            .map((result, i) => {
-              let url = result.url;
-              if (base && !url.startsWith(base) && !url.startsWith("http")) {
-                url = base + url;
-              }
-              const title =
-                result.meta?.title ||
-                url.split("/").pop()?.replace(/-/g, " ") ||
-                "Untitled";
-              const excerpt = result.excerpt || "";
-              const pathParts = url
-                .replace(base, "")
-                .replace(/^\//, "")
-                .replace(/\/$/, "")
-                .split("/");
-              const category =
-                pathParts.length > 1 ? pathParts[0].replace(/-/g, " ") : "";
-
-              return `
-              <a href="${url}" class="search-result-item ${i === selectedIndex ? "selected" : ""}" data-index="${i}">
-                <div class="search-result-icon">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4"/>
-                    <path d="M14 2v4a2 2 0 0 0 2 2h4"/>
-                    <path d="m3 15 2 2 4-4"/>
-                  </svg>
-                </div>
-                <div class="search-result-content">
-                  <div class="search-result-title">${title}</div>
-                  ${excerpt ? `<div class="search-result-excerpt">${excerpt}</div>` : ""}
-                </div>
-                ${category ? `<span class="search-result-category">${category}</span>` : ""}
-                <div class="search-result-action">
-                  <kbd>↵</kbd>
-                </div>
-              </a>
-            `;
-            })
-            .join("")}
-        </div>
-      `;
-
-      resultsContainer.innerHTML = html;
-
-      // Add click handlers
-      resultsContainer
-        .querySelectorAll(".search-result-item")
-        .forEach((item) => {
-          item.addEventListener("click", () => closeModal());
-        });
-    }
-
-    function updateSelection() {
-      const items = resultsContainer?.querySelectorAll(".search-result-item");
-      items?.forEach((item, i) => {
-        item.classList.toggle("selected", i === selectedIndex);
-      });
-
-      // Scroll selected item into view
-      const selectedItem = resultsContainer?.querySelector(
-        ".search-result-item.selected",
-      );
-      selectedItem?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-    }
-
-    // Keyboard shortcut: ⌘K or Ctrl+K
-    document.addEventListener("keydown", (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        e.preventDefault();
-        if (modal?.classList.contains("open")) {
-          closeModal();
-        } else {
-          openModal();
+      function setLoading(loading) {
+        isLoading = loading;
+        if (loadingEl) {
+          loadingEl.classList.toggle("active", loading);
         }
       }
 
-      if (e.key === "Escape" && modal?.classList.contains("open")) {
-        closeModal();
+      function openModal() {
+        modal.classList.add("open");
+        document.body.style.overflow = "hidden";
+        setTimeout(function() { if (input) input.focus(); }, 50);
       }
 
-      // Arrow navigation
-      if (modal?.classList.contains("open") && results.length > 0) {
-        if (e.key === "ArrowDown") {
-          e.preventDefault();
-          selectedIndex = (selectedIndex + 1) % results.length;
-          updateSelection();
-        }
-        if (e.key === "ArrowUp") {
-          e.preventDefault();
-          selectedIndex = (selectedIndex - 1 + results.length) % results.length;
-          updateSelection();
-        }
-        if (e.key === "Enter" && results[selectedIndex]) {
-          e.preventDefault();
-          let url = results[selectedIndex].url;
-          if (base && !url.startsWith(base) && !url.startsWith("http")) {
-            url = base + url;
-          }
-          window.location.href = url;
-        }
-      }
-    });
-
-    // Click backdrop to close
-    backdrop?.addEventListener("click", closeModal);
-
-    // Search as you type with debounce
-    input?.addEventListener("input", async (e) => {
-      const query = e.target.value.trim();
-
-      // Clear previous timeout
-      if (searchTimeout) {
-        clearTimeout(searchTimeout);
-      }
-
-      if (!query) {
+      function closeModal() {
+        modal.classList.remove("open");
+        document.body.style.overflow = "";
+        if (input) input.value = "";
         renderEmpty();
         results = [];
-        setLoading(false);
-        return;
+        selectedIndex = 0;
       }
 
-      setLoading(true);
+      function renderEmpty() {
+        if (!resultsContainer) return;
+        resultsContainer.innerHTML =
+          '<div class="search-empty">' +
+            '<div class="search-empty-icon">' +
+              '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">' +
+                '<circle cx="11" cy="11" r="8"/>' +
+                '<path d="m21 21-4.3-4.3"/>' +
+              '</svg>' +
+            '</div>' +
+            '<p class="search-empty-text">' + searchTitle + '</p>' +
+            '<p class="search-empty-hint">' + searchHint + '</p>' +
+          '</div>';
+      }
 
-      // Debounce search
-      searchTimeout = setTimeout(async () => {
-        if (pagefind) {
-          try {
-            const search = await pagefind.search(query);
-            results = await Promise.all(
-              search.results.slice(0, 10).map((r) => r.data()),
-            );
-            selectedIndex = 0;
-            renderResults(results);
-          } catch (err) {
-            console.error("Search error:", err);
-            renderNoResults(query);
+      function renderNoResults(query) {
+        if (!resultsContainer) return;
+        resultsContainer.innerHTML =
+          '<div class="search-no-results">' +
+            '<div class="search-no-results-icon">' +
+              '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">' +
+                '<circle cx="11" cy="11" r="8"/>' +
+                '<path d="m21 21-4.3-4.3"/>' +
+                '<path d="M8 8l6 6M14 8l-6 6"/>' +
+              '</svg>' +
+            '</div>' +
+            '<p class="search-no-results-text">' + searchNoResults + ' "' + query + '"</p>' +
+            '<p class="search-no-results-hint">' + searchNoResultsHint + '</p>' +
+          '</div>';
+      }
+
+      function renderResults(searchResults) {
+        if (!resultsContainer) return;
+
+        if (searchResults.length === 0) {
+          renderNoResults(input ? input.value : "");
+          return;
+        }
+
+        var html = '<div class="search-results-list">';
+        for (var i = 0; i < searchResults.length; i++) {
+          var result = searchResults[i];
+          var url = result.url;
+          if (base && url.indexOf(base) !== 0 && url.indexOf("http") !== 0) {
+            url = base + url;
           }
-        } else {
-          // Fallback: no search available
-          if (resultsContainer) {
-            resultsContainer.innerHTML = `
-              <div class="search-no-results">
-                <div class="search-no-results-icon">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"/>
-                    <path d="M12 16v-4M12 8h.01"/>
-                  </svg>
-                </div>
-                <p class="search-no-results-text">${searchUnavailable}</p>
-                <p class="search-no-results-hint">${searchBuildHint}</p>
-              </div>
-            `;
+          var title = (result.meta && result.meta.title) ||
+            (url.split("/").pop() || "").replace(/-/g, " ") || "Untitled";
+          var excerpt = result.excerpt || "";
+          var pathParts = url.replace(base, "").replace(/^\//, "").replace(/\/$/, "").split("/");
+          var category = pathParts.length > 1 ? pathParts[0].replace(/-/g, " ") : "";
+
+          html += '<a href="' + url + '" class="search-result-item' + (i === selectedIndex ? " selected" : "") + '" data-index="' + i + '">' +
+            '<div class="search-result-icon">' +
+              '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+                '<path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4"/>' +
+                '<path d="M14 2v4a2 2 0 0 0 2 2h4"/>' +
+                '<path d="m3 15 2 2 4-4"/>' +
+              '</svg>' +
+            '</div>' +
+            '<div class="search-result-content">' +
+              '<div class="search-result-title">' + title + '</div>' +
+              (excerpt ? '<div class="search-result-excerpt">' + excerpt + '</div>' : '') +
+            '</div>' +
+            (category ? '<span class="search-result-category">' + category + '</span>' : '') +
+            '<div class="search-result-action"><kbd>↵</kbd></div>' +
+          '</a>';
+        }
+        html += '</div>';
+
+        resultsContainer.innerHTML = html;
+
+        // Add click handlers
+        resultsContainer.querySelectorAll(".search-result-item").forEach(function(item) {
+          item.addEventListener("click", function() { closeModal(); });
+        });
+      }
+
+      function updateSelection() {
+        var items = resultsContainer ? resultsContainer.querySelectorAll(".search-result-item") : [];
+        items.forEach(function(item, i) {
+          item.classList.toggle("selected", i === selectedIndex);
+        });
+        var selectedItem = resultsContainer ? resultsContainer.querySelector(".search-result-item.selected") : null;
+        if (selectedItem) {
+          selectedItem.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        }
+      }
+
+      // Expose open/close functions IMMEDIATELY (before pagefind loads)
+      window.openSearchModal = openModal;
+      window.closeSearchModal = closeModal;
+
+      // Keyboard shortcut: Cmd+K or Ctrl+K
+      document.addEventListener("keydown", function(e) {
+        if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+          e.preventDefault();
+          if (modal.classList.contains("open")) {
+            closeModal();
+          } else {
+            openModal();
           }
         }
-        setLoading(false);
-      }, 150);
-    });
 
-    // Expose open function for search trigger button
-    window.openSearchModal = openModal;
-  }
+        if (e.key === "Escape" && modal.classList.contains("open")) {
+          closeModal();
+        }
 
-  initSearch();
-  document.addEventListener("astro:page-load", initSearch);
+        // Arrow navigation
+        if (modal.classList.contains("open") && results.length > 0) {
+          if (e.key === "ArrowDown") {
+            e.preventDefault();
+            selectedIndex = (selectedIndex + 1) % results.length;
+            updateSelection();
+          }
+          if (e.key === "ArrowUp") {
+            e.preventDefault();
+            selectedIndex = (selectedIndex - 1 + results.length) % results.length;
+            updateSelection();
+          }
+          if (e.key === "Enter" && results[selectedIndex]) {
+            e.preventDefault();
+            var navUrl = results[selectedIndex].url;
+            if (base && navUrl.indexOf(base) !== 0 && navUrl.indexOf("http") !== 0) {
+              navUrl = base + navUrl;
+            }
+            window.location.href = navUrl;
+          }
+        }
+      });
+
+      // Click backdrop to close
+      if (backdrop) {
+        backdrop.addEventListener("click", closeModal);
+      }
+
+      // Search as you type with debounce
+      if (input) {
+        input.addEventListener("input", function(e) {
+          var query = e.target.value.trim();
+
+          if (searchTimeout) {
+            clearTimeout(searchTimeout);
+          }
+
+          if (!query) {
+            renderEmpty();
+            results = [];
+            setLoading(false);
+            return;
+          }
+
+          setLoading(true);
+
+          searchTimeout = setTimeout(function() {
+            if (pagefind) {
+              pagefind.search(query).then(function(search) {
+                return Promise.all(search.results.slice(0, 10).map(function(r) { return r.data(); }));
+              }).then(function(data) {
+                results = data;
+                selectedIndex = 0;
+                renderResults(results);
+                setLoading(false);
+              }).catch(function(err) {
+                console.error("Search error:", err);
+                renderNoResults(query);
+                setLoading(false);
+              });
+            } else {
+              // Fallback: no search available
+              if (resultsContainer) {
+                resultsContainer.innerHTML =
+                  '<div class="search-no-results">' +
+                    '<div class="search-no-results-icon">' +
+                      '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">' +
+                        '<circle cx="12" cy="12" r="10"/>' +
+                        '<path d="M12 16v-4M12 8h.01"/>' +
+                      '</svg>' +
+                    '</div>' +
+                    '<p class="search-no-results-text">' + searchUnavailable + '</p>' +
+                    '<p class="search-no-results-hint">' + searchBuildHint + '</p>' +
+                  '</div>';
+              }
+              setLoading(false);
+            }
+          }, 150);
+        });
+      }
+
+      // Load Pagefind asynchronously (non-blocking)
+      var pagefindPath = base + "/pagefind/pagefind.js";
+      import(pagefindPath).then(function(pf) {
+        pagefind = pf;
+        return pagefind.init();
+      }).catch(function() {
+        // Pagefind not available (run build first to generate index)
+      });
+    }
+
+    // Run immediately if DOM is ready, otherwise wait
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initSearch);
+    } else {
+      initSearch();
+    }
+
+    // Re-init on Astro page navigation
+    document.addEventListener("astro:page-load", initSearch);
+  })();
 </script>

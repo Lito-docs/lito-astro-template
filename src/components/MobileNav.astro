@@ -350,53 +350,84 @@ const isTabActive = (tab: { href: string; match?: string; groups?: string[] }) =
   }
 </style>
 
-<script>
-  function initMobileNav() {
-    const mobileNav = document.getElementById('mobile-nav');
-    const menuBtn = document.getElementById('mobile-menu-btn');
-    const closeBtn = document.getElementById('mobile-nav-close');
-    const backdrop = mobileNav?.querySelector('.mobile-nav-backdrop');
+<script is:inline>
+  (function() {
+    // Prevent duplicate initialization
+    if (window.__mobileNavInit) return;
+    window.__mobileNavInit = true;
 
-    function openNav() {
-      mobileNav?.classList.add('open');
-      document.body.style.overflow = 'hidden';
-    }
+    function initMobileNav() {
+      var mobileNav = document.getElementById('mobile-nav');
+      var menuBtn = document.getElementById('mobile-menu-btn');
+      var closeBtn = document.getElementById('mobile-nav-close');
+      var backdrop = mobileNav ? mobileNav.querySelector('.mobile-nav-backdrop') : null;
 
-    function closeNav() {
-      mobileNav?.classList.remove('open');
-      document.body.style.overflow = '';
-    }
+      if (!mobileNav || !menuBtn) return;
 
-    menuBtn?.addEventListener('click', openNav);
-    closeBtn?.addEventListener('click', closeNav);
-    backdrop?.addEventListener('click', closeNav);
-
-    // Close on escape key
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && mobileNav?.classList.contains('open')) {
-        closeNav();
+      function openNav() {
+        mobileNav.classList.add('open');
+        document.body.style.overflow = 'hidden';
       }
-    });
 
-    // Close when navigating
-    mobileNav?.querySelectorAll('.mobile-nav-link, .mobile-nav-tab').forEach((link) => {
-      link.addEventListener('click', closeNav);
-    });
+      function closeNav() {
+        mobileNav.classList.remove('open');
+        document.body.style.overflow = '';
+      }
 
-    // Mobile dropdown toggles
-    mobileNav?.querySelectorAll('[data-mobile-dropdown]').forEach((dropdown) => {
-      const trigger = dropdown.querySelector('.mobile-nav-dropdown-trigger');
-      const items = dropdown.querySelector('.mobile-nav-dropdown-items');
-      trigger?.addEventListener('click', () => {
-        const isOpen = dropdown.classList.toggle('open');
-        trigger.setAttribute('aria-expanded', String(isOpen));
-        if (items) {
-          (items as HTMLElement).hidden = !isOpen;
+      // Remove old listeners by cloning nodes (prevents duplicate listeners on re-init)
+      var newMenuBtn = menuBtn.cloneNode(true);
+      menuBtn.parentNode.replaceChild(newMenuBtn, menuBtn);
+      newMenuBtn.addEventListener('click', openNav);
+
+      var newCloseBtn = closeBtn ? closeBtn.cloneNode(true) : null;
+      if (closeBtn && newCloseBtn) {
+        closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
+        newCloseBtn.addEventListener('click', closeNav);
+      }
+
+      if (backdrop) {
+        backdrop.addEventListener('click', closeNav);
+      }
+
+      // Close on escape key
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && mobileNav.classList.contains('open')) {
+          closeNav();
         }
       });
-    });
-  }
 
-  initMobileNav();
-  document.addEventListener('astro:page-load', initMobileNav);
+      // Close when navigating
+      mobileNav.querySelectorAll('.mobile-nav-link, .mobile-nav-tab').forEach(function(link) {
+        link.addEventListener('click', closeNav);
+      });
+
+      // Mobile dropdown toggles
+      mobileNav.querySelectorAll('[data-mobile-dropdown]').forEach(function(dropdown) {
+        var trigger = dropdown.querySelector('.mobile-nav-dropdown-trigger');
+        var items = dropdown.querySelector('.mobile-nav-dropdown-items');
+        if (trigger) {
+          trigger.addEventListener('click', function() {
+            var isOpen = dropdown.classList.toggle('open');
+            trigger.setAttribute('aria-expanded', String(isOpen));
+            if (items) {
+              items.hidden = !isOpen;
+            }
+          });
+        }
+      });
+    }
+
+    // Run immediately if DOM is ready, otherwise wait
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initMobileNav);
+    } else {
+      initMobileNav();
+    }
+
+    // Re-init on Astro page navigation
+    document.addEventListener('astro:page-load', function() {
+      window.__mobileNavInit = false;
+      initMobileNav();
+    });
+  })();
 </script>

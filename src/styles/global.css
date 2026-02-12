@@ -297,20 +297,20 @@ body {
   color: var(--foreground);
 }
 
-/* Search input */
-.search-input {
+/* Search input (sidebar/page search, not the modal) */
+.search-input:not(#search-input) {
   @apply w-full px-4 py-2.5 rounded-lg transition-all duration-200;
   background-color: var(--input);
   border: 1px solid var(--border);
   color: var(--foreground);
 }
 
-.search-input:focus {
+.search-input:not(#search-input):focus {
   outline: none;
   border-color: var(--primary-400);
 }
 
-.search-input::placeholder {
+.search-input:not(#search-input)::placeholder {
   color: var(--muted-foreground);
 }
 

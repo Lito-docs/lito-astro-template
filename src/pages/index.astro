@@ -1,20 +1,44 @@
 ---
-// Landing page placeholder
-// This file is replaced by the CLI when custom landing is configured
-// When no custom landing is set, redirect to the first docs page
+/**
+ * Landing page — serves custom HTML from _landing/index.html when present,
+ * otherwise redirects to the first docs page.
+ *
+ * The custom landing page is a fully standalone HTML document (own <head>,
+ * styles, scripts). It is rendered WITHOUT the docs Layout — no Header,
+ * no Footer, no Sidebar.
+ */
+import fs from 'node:fs';
+import path from 'node:path';
 import { getConfigFile, getNavigation } from '../utils/config';
 
-const config = await getConfigFile();
-const navigation = await getNavigation();
+const config = await getConfigFile() as any;
 
-// Find the first docs page from navigation
-let firstDocsPage = '/introduction';
-if (navigation.sidebar && navigation.sidebar.length > 0) {
-  const firstGroup = navigation.sidebar[0];
-  if (firstGroup.items && firstGroup.items.length > 0) {
-    firstDocsPage = firstGroup.items[0].href || '/introduction';
+// Check for custom landing page
+const landingSource = config.landing?.source || '_landing';
+const landingPath = path.join(process.cwd(), landingSource, 'index.html');
+
+let landingHtml = '';
+let hasCustomLanding = false;
+
+try {
+  if (fs.existsSync(landingPath)) {
+    landingHtml = fs.readFileSync(landingPath, 'utf-8');
+    hasCustomLanding = true;
   }
+} catch {
+  // Fall through to redirect
 }
 
-return Astro.redirect(firstDocsPage);
+if (!hasCustomLanding) {
+  const navigation = await getNavigation();
+  let firstDocsPage = '/introduction';
+  if (navigation?.sidebar?.length > 0) {
+    const firstGroup = navigation.sidebar[0];
+    if (firstGroup.items?.length > 0) {
+      firstDocsPage = firstGroup.items[0].href || '/introduction';
+    }
+  }
+  return Astro.redirect(firstDocsPage);
+}
 ---
+<Fragment set:html={landingHtml} />

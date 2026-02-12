@@ -532,6 +532,89 @@
         }
       }
     },
+    "landing": {
+      "type": "object",
+      "description": "Landing page configuration. Supports custom HTML landing pages, section-based layouts, and custom navbar/footer for the landing page only.",
+      "properties": {
+        "enabled": { "type": "boolean", "default": true, "description": "Enable landing page (set false to go straight to docs)" },
+        "type": {
+          "type": "string",
+          "enum": ["none", "default", "config", "custom", "sections"],
+          "default": "default",
+          "description": "Landing type: 'none' (no landing), 'default' (template landing), 'config' (from config), 'custom' (full HTML from _landing/), 'sections' (mix)"
+        },
+        "source": {
+          "type": "string",
+          "default": "_landing",
+          "description": "Folder name for custom landing files (relative to docs root)"
+        },
+        "hero": { "type": "object", "description": "Hero section configuration (for type: config)" },
+        "features": { "type": "array", "description": "Features section items (for type: config)" },
+        "navbar": {
+          "oneOf": [
+            {
+              "const": false,
+              "description": "Set to false to hide the navbar on the landing page"
+            },
+            {
+              "type": "object",
+              "description": "Custom navbar for the landing page only. Place navbar.html in _landing/ folder or specify a path here.",
+              "properties": {
+                "html": {
+                  "type": "string",
+                  "description": "Path to custom navbar HTML file (relative to docs root, e.g., '_landing/navbar.html')"
+                }
+              }
+            }
+          ]
+        },
+        "footer": {
+          "oneOf": [
+            {
+              "const": false,
+              "description": "Set to false to hide the footer on the landing page"
+            },
+            {
+              "type": "object",
+              "description": "Custom footer for the landing page only. Place footer.html in _landing/ folder or specify a path here.",
+              "properties": {
+                "html": {
+                  "type": "string",
+                  "description": "Path to custom footer HTML file (relative to docs root, e.g., '_landing/footer.html')"
+                }
+              }
+            }
+          ]
+        },
+        "sections": {
+          "type": "array",
+          "description": "Section definitions (for type: sections)",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "Section type: 'hero', 'features', 'cta', 'custom', etc."
+              },
+              "source": {
+                "type": "string",
+                "enum": ["default", "custom"],
+                "description": "Use 'default' for template component, 'custom' for HTML file"
+              },
+              "html": {
+                "type": "string",
+                "description": "Path to custom HTML file for this section (when type is 'custom')"
+              },
+              "props": {
+                "type": "object",
+                "description": "Props to pass to default section components"
+              }
+            },
+            "required": ["type"]
+          }
+        }
+      }
+    },
     "announcement": {
       "type": "object",
       "description": "Announcement bar displayed above the navbar",
