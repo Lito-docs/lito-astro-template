@@ -6,12 +6,16 @@ interface Props {
   title?: string;
   href?: string;
   icon?: string;
+  target?: string;
 }
 
-const { title, href, icon } = Astro.props;
+const { title, href, icon, target } = Astro.props;
 
 const Tag = href ? 'a' : 'div';
 const link = href ? createLink(href) : undefined;
+const isExternal = href?.startsWith('http');
+const linkTarget = target || (isExternal ? '_blank' : undefined);
+const linkRel = linkTarget === '_blank' ? 'noopener noreferrer' : undefined;
 
 // Check if icon is an Iconify name (contains :) or an emoji
 const isIconifyIcon = icon?.includes(':');
@@ -19,6 +23,8 @@ const isIconifyIcon = icon?.includes(':');
 
 <Tag
   href={link}
+  target={linkTarget}
+  rel={linkRel}
   class:list={["card-component", "group", { "cursor-pointer": href }]}
 >
   {icon && (
