@@ -1,0 +1,35 @@
+---
+/**
+ * ReadingTime - Displays estimated reading time for the current page
+ *
+ * Gets readingTime from frontmatter (injected by remark-reading-time plugin)
+ * and displays "X min read" next to LastUpdated.
+ */
+import Icon from './Icon.astro';
+
+interface Props {
+  frontmatter?: Record<string, unknown>;
+}
+
+const { frontmatter } = Astro.props;
+const readingTime = frontmatter?.readingTime as number | undefined;
+
+if (!readingTime) {
+  return null;
+}
+---
+
+<div class="reading-time">
+  <Icon name="lucide:book-open" size={14} />
+  <span>{readingTime} min read</span>
+</div>
+
+<style>
+  .reading-time {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+  }
+</style>

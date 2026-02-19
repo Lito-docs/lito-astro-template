@@ -1,0 +1,193 @@
+---
+/**
+ * FileTree - Display a file/folder structure with icons
+ * Usage:
+ * <FileTree>
+ * - src/
+ *   - components/
+ *     - Header.astro
+ *   - pages/
+ *     - index.astro
+ * - package.json
+ * </FileTree>
+ *
+ * Folders end with `/`, files don't. Indentation (2 spaces) creates nesting.
+ * Use `highlight` prop to emphasize specific files (comma-separated).
+ */
+
+interface Props {
+  highlight?: string;
+}
+
+const { highlight } = Astro.props;
+const id = `filetree-${Math.random().toString(36).slice(2, 9)}`;
+---
+
+<div class="filetree not-prose" id={id} data-highlight={highlight}>
+  <div class="filetree-raw"><slot /></div>
+  <div class="filetree-rendered"></div>
+</div>
+
+<script>
+  function initFileTree(el: HTMLElement) {
+    const raw = el.querySelector('.filetree-raw');
+    const rendered = el.querySelector('.filetree-rendered');
+    if (!raw || !rendered) return;
+
+    const text = raw.textContent || '';
+    raw.remove();
+
+    const highlightAttr = el.dataset.highlight || '';
+    const highlights = highlightAttr.split(',').map(s => s.trim()).filter(Boolean);
+
+    const lines = text.split('\n').filter(l => l.trim());
+    const tree = buildTree(lines);
+    rendered.innerHTML = renderTree(tree, highlights);
+
+    // Expand/collapse
+    rendered.addEventListener('click', (e) => {
+      const toggle = (e.target as HTMLElement).closest('.filetree-folder-toggle');
+      if (!toggle) return;
+      const li = toggle.closest('li');
+      if (!li) return;
+      li.classList.toggle('collapsed');
+    });
+  }
+
+  interface TreeNode {
+    name: string;
+    isFolder: boolean;
+    children: TreeNode[];
+  }
+
+  function buildTree(lines: string[]): TreeNode[] {
+    const root: TreeNode[] = [];
+    const stack: { indent: number; children: TreeNode[] }[] = [{ indent: -1, children: root }];
+
+    for (const line of lines) {
+      const stripped = line.replace(/^[\s]*[-*]\s*/, '');
+      const indent = line.search(/[^\s]/);
+      const name = stripped.trim();
+      if (!name) continue;
+
+      const isFolder = name.endsWith('/');
+      const node: TreeNode = { name: isFolder ? name.slice(0, -1) : name, isFolder, children: [] };
+
+      // Pop stack to find parent
+      while (stack.length > 1 && stack[stack.length - 1].indent >= indent) {
+        stack.pop();
+      }
+
+      stack[stack.length - 1].children.push(node);
+
+      if (isFolder) {
+        stack.push({ indent, children: node.children });
+      }
+    }
+
+    return root;
+  }
+
+  function renderTree(nodes: TreeNode[], highlights: string[]): string {
+    if (!nodes.length) return '';
+    let html = '<ul class="filetree-list">';
+    for (const node of nodes) {
+      const isHighlighted = highlights.includes(node.name) || highlights.includes(node.name + (node.isFolder ? '/' : ''));
+      const highlightClass = isHighlighted ? ' filetree-highlight' : '';
+
+      if (node.isFolder) {
+        html += `<li class="filetree-item filetree-folder${highlightClass}">`;
+        html += `<span class="filetree-folder-toggle">`;
+        html += `<svg class="filetree-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>`;
+        html += `<svg class="filetree-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>`;
+        html += `<span class="filetree-name">${node.name}</span>`;
+        html += `</span>`;
+        html += renderTree(node.children, highlights);
+        html += `</li>`;
+      } else {
+        html += `<li class="filetree-item filetree-file${highlightClass}">`;
+        html += `<svg class="filetree-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>`;
+        html += `<span class="filetree-name">${node.name}</span>`;
+        html += `</li>`;
+      }
+    }
+    html += '</ul>';
+    return html;
+  }
+
+  function initAll() {
+    document.querySelectorAll<HTMLElement>('.filetree').forEach(el => {
+      if (!el.querySelector('.filetree-raw')) return;
+      initFileTree(el);
+    });
+  }
+
+  initAll();
+  document.addEventListener('astro:page-load', initAll);
+</script>
+
+<style>
+  @reference "../../styles/global.css";
+
+  .filetree {
+    @apply my-4 rounded-lg border border-border bg-card overflow-hidden text-sm;
+  }
+
+  .filetree-raw {
+    @apply hidden;
+  }
+
+  .filetree :global(.filetree-list) {
+    @apply list-none m-0 p-0;
+  }
+
+  .filetree :global(.filetree-list .filetree-list) {
+    @apply pl-4;
+  }
+
+  .filetree :global(.filetree-item) {
+    @apply m-0;
+  }
+
+  .filetree :global(.filetree-folder-toggle) {
+    @apply flex items-center gap-1.5 px-3 py-1.5 cursor-pointer select-none;
+    @apply hover:bg-accent transition-colors duration-100;
+  }
+
+  .filetree :global(.filetree-file) {
+    @apply flex items-center gap-1.5 px-3 py-1.5 pl-[2.1rem];
+  }
+
+  .filetree :global(.filetree-icon) {
+    @apply text-muted-foreground shrink-0;
+  }
+
+  .filetree :global(.filetree-folder .filetree-icon) {
+    @apply text-primary-500;
+  }
+
+  .filetree :global(.filetree-chevron) {
+    @apply text-muted-foreground shrink-0 transition-transform duration-150;
+  }
+
+  .filetree :global(.collapsed > .filetree-folder-toggle .filetree-chevron) {
+    @apply rotate-0;
+  }
+
+  .filetree :global(.filetree-folder:not(.collapsed) > .filetree-folder-toggle .filetree-chevron) {
+    @apply rotate-90;
+  }
+
+  .filetree :global(.collapsed > .filetree-list) {
+    @apply hidden;
+  }
+
+  .filetree :global(.filetree-name) {
+    @apply text-foreground;
+  }
+
+  .filetree :global(.filetree-highlight > .filetree-folder-toggle .filetree-name),
+  .filetree :global(.filetree-highlight.filetree-file .filetree-name) {
+    @apply text-primary-500 font-medium;
+  }
+</style>

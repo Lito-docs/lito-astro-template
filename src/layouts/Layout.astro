@@ -9,6 +9,7 @@ import SEOHead from '../components/SEOHead.astro';
 import { getConfigFile } from '../utils/config';
 import { createLink } from '../utils/url';
 import { getI18nConfig, getLocaleFromPath, isRTL } from '../utils/i18n';
+import ScrollToTop from '../components/ScrollToTop.astro';
 import type { SEOFrontmatter } from '../types/seo';
 import '../styles/global.css';
 
@@ -72,6 +73,7 @@ const hasTabs = navTabs && navTabs.length > 0;
     </script>
   </head>
   <body class="bg-background text-foreground font-sans antialiased">
+    <a href="#main-content" class="skip-to-content">Skip to content</a>
     {showAnnouncement && <AnnouncementBar config={announcement} />}
     <Header />
     {hasTabs && <NavTabs tabs={navTabs} />}
@@ -85,6 +87,14 @@ const hasTabs = navTabs && navTabs.length > 0;
 
     <style is:global>
       @reference '../styles/global.css';
+
+      .skip-to-content {
+        @apply fixed top-0 left-1/2 -translate-x-1/2 -translate-y-full z-[100];
+        @apply px-4 py-2 text-sm font-medium rounded-b-lg;
+        @apply bg-primary-500 text-white;
+        @apply focus:translate-y-0 focus:outline-none;
+        @apply transition-transform duration-200;
+      }
 
       code, pre {
         font-family: 'Fira Code', 'Courier New', monospace !important;
@@ -105,5 +115,6 @@ const hasTabs = navTabs && navTabs.length > 0;
         padding-top: 7rem;
       }
     </style>
+    <ScrollToTop />
   </body>
 </html>

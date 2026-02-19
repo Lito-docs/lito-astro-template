@@ -1,0 +1,48 @@
+---
+/**
+ * Image - Enhanced image component for documentation
+ * Usage:
+ * <Image src="/images/screenshot.png" alt="Screenshot" caption="A screenshot of the app" />
+ * <Image src="/images/hero.jpg" alt="Hero" width={800} />
+ */
+
+interface Props {
+  src: string;
+  alt: string;
+  caption?: string;
+  width?: number;
+  height?: number;
+  class?: string;
+}
+
+const { src, alt, caption, width, height, class: className } = Astro.props;
+---
+
+<figure class:list={["image-component not-prose", className]}>
+  <img
+    src={src}
+    alt={alt}
+    width={width}
+    height={height}
+    loading="lazy"
+    decoding="async"
+    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 720px"
+  />
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<style>
+  @reference "../../styles/global.css";
+
+  .image-component {
+    @apply my-6;
+  }
+
+  .image-component img {
+    @apply w-full h-auto rounded-lg border border-border;
+  }
+
+  .image-component figcaption {
+    @apply text-center text-xs text-muted-foreground mt-2;
+  }
+</style>

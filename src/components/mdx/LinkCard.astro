@@ -1,0 +1,110 @@
+---
+/**
+ * LinkCard - Single-link reference card for MDX
+ *
+ * Usage:
+ *   <LinkCard title="Getting Started" href="/getting-started" description="Learn how to set up Lito" />
+ *   <LinkCard title="GitHub" href="https://github.com/Lito-docs/cli" icon="fa6-brands:github" />
+ */
+import { createLink } from '../../utils/url';
+import Icon from '../Icon.astro';
+
+interface Props {
+  title: string;
+  href: string;
+  description?: string;
+  icon?: string;
+  target?: string;
+}
+
+const { title, href, description, icon, target } = Astro.props;
+
+const link = createLink(href);
+const isExternal = href.startsWith('http');
+const linkTarget = target || (isExternal ? '_blank' : undefined);
+const linkRel = linkTarget === '_blank' ? 'noopener noreferrer' : undefined;
+
+// Check if icon is an Iconify name (contains :) or an emoji
+const isIconifyIcon = icon?.includes(':');
+---
+
+<a
+  href={link}
+  target={linkTarget}
+  rel={linkRel}
+  class="link-card"
+>
+  {icon && (
+    <div class="link-card-icon">
+      {isIconifyIcon ? <Icon name={icon} size={20} /> : icon}
+    </div>
+  )}
+  <div class="link-card-content">
+    <span class="link-card-title">{title}</span>
+    {description && <span class="link-card-description">{description}</span>}
+  </div>
+  <div class="link-card-arrow">
+    {isExternal ? (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M7 7h10v10" /><path d="M7 17 17 7" />
+      </svg>
+    ) : (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m9 18 6-6-6-6" />
+      </svg>
+    )}
+  </div>
+</a>
+
+<style>
+  @reference "../../styles/global.css";
+
+  .link-card {
+    @apply not-prose flex items-center gap-3 p-4 my-3 rounded-lg;
+    @apply border border-border bg-card;
+    @apply transition-colors duration-150;
+    text-decoration: none;
+  }
+
+  .link-card:hover {
+    border-color: var(--primary-300);
+    background: var(--accent);
+    text-decoration: none;
+  }
+
+  :global(.dark) .link-card:hover {
+    border-color: var(--primary-400);
+  }
+
+  .link-card-icon {
+    @apply flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-base;
+    @apply text-primary-600;
+    background: var(--primary-50);
+  }
+
+  :global(.dark) .link-card-icon {
+    @apply text-primary-400;
+    background: var(--primary-100);
+  }
+
+  .link-card-content {
+    @apply flex-1 min-w-0 flex flex-col;
+  }
+
+  .link-card-title {
+    @apply text-sm font-semibold text-card-foreground;
+  }
+
+  .link-card-description {
+    @apply text-xs text-muted-foreground mt-0.5 leading-relaxed;
+  }
+
+  .link-card-arrow {
+    @apply flex-shrink-0 text-muted-foreground;
+    @apply transition-colors duration-150;
+  }
+
+  .link-card:hover .link-card-arrow {
+    @apply text-primary-500;
+  }
+</style>

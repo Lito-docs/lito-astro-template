@@ -8,7 +8,9 @@ import VersionBanner from '../components/VersionBanner.astro';
 import CopyPageButton from '../components/CopyPageButton.astro';
 import EditPageLink from '../components/EditPageLink.astro';
 import LastUpdated from '../components/LastUpdated.astro';
+import ReadingTime from '../components/ReadingTime.astro';
 import PageFeedback from '../components/PageFeedback.astro';
+import InlineCodeCopy from '../components/InlineCodeCopy.astro';
 import type { SEOFrontmatter } from '../types/seo';
 import { getConfigFile } from '../utils/config';
 
@@ -67,7 +69,7 @@ if (!found && currentSlug) {
 ---
 
 <Layout title={title} description={description} frontmatter={frontmatter} breadcrumbs={breadcrumbs}>
-  <main class="main-content pt-16">
+  <main id="main-content" class="main-content pt-16">
     <article class="docs-prose">
       <div class="article-header">
         <Breadcrumbs />
@@ -77,6 +79,7 @@ if (!found && currentSlug) {
       <slot />
       <div class="article-footer-meta">
         <LastUpdated frontmatter={frontmatter as Record<string, unknown>} />
+        <ReadingTime frontmatter={frontmatter as Record<string, unknown>} />
         <EditPageLink sourceFile={sourceFile} />
       </div>
       <PageFeedback />
@@ -85,6 +88,7 @@ if (!found && currentSlug) {
     <Footer />
   </main>
   <TableOfContents />
+  <InlineCodeCopy />
 </Layout>
 
 <script>

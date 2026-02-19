@@ -305,7 +305,31 @@
     "integrations": {
       "type": "object",
       "properties": {
-        "analytics": { "type": ["object", "null"] },
+        "analytics": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "description": "Analytics provider configuration",
+              "properties": {
+                "provider": {
+                  "type": "string",
+                  "enum": ["google-analytics", "posthog", "clarity", "plausible", "umami", "fathom"],
+                  "description": "Analytics provider name"
+                },
+                "measurementId": { "type": "string", "description": "Google Analytics measurement ID (e.g., G-XXXXXXXXXX)" },
+                "apiKey": { "type": "string", "description": "PostHog API key" },
+                "apiHost": { "type": "string", "description": "PostHog API host (defaults to https://us.i.posthog.com)" },
+                "projectId": { "type": "string", "description": "Microsoft Clarity project ID" },
+                "domain": { "type": "string", "description": "Plausible domain" },
+                "websiteId": { "type": "string", "description": "Umami website ID" },
+                "siteId": { "type": "string", "description": "Fathom site ID" },
+                "scriptUrl": { "type": "string", "description": "Custom script URL for self-hosted Plausible/Umami/Fathom" }
+              },
+              "required": ["provider"]
+            }
+          ]
+        },
         "feedback": {
           "type": "object",
           "properties": {
@@ -335,6 +359,25 @@
               "default": "long",
               "description": "Date format: 'long' (January 1, 2025), 'short' (Jan 1, 2025), 'relative' (2 days ago)"
             }
+          }
+        },
+        "rss": {
+          "type": "object",
+          "description": "RSS feed configuration",
+          "properties": {
+            "enabled": { "type": "boolean", "default": false, "description": "Enable RSS feed at /rss.xml" },
+            "title": { "type": "string", "description": "Feed title (defaults to site name)" },
+            "description": { "type": "string", "description": "Feed description (defaults to site description)" },
+            "limit": { "type": "number", "default": 50, "description": "Maximum number of items in the feed" }
+          }
+        },
+        "llmsTxt": {
+          "type": "object",
+          "description": "llms.txt AI discoverability support. Generates /llms.txt, /llms-full.txt, and /llms-small.txt files for AI agents.",
+          "properties": {
+            "enabled": { "type": "boolean", "default": false, "description": "Enable llms.txt generation (requires site URL in metadata.url)" },
+            "title": { "type": "string", "description": "Title for the llms.txt file (defaults to site name)" },
+            "description": { "type": "string", "description": "Description for the llms.txt file (defaults to site description)" }
           }
         },
         "copyPage": {
@@ -436,6 +479,11 @@
           "type": "boolean",
           "default": true,
           "description": "Enable breadcrumb JSON-LD structured data"
+        },
+        "autoOgImages": {
+          "type": "boolean",
+          "default": true,
+          "description": "Auto-generate OG images for pages without a custom ogImage"
         }
       }
     },
@@ -629,6 +677,23 @@
           "default": "default",
           "description": "Visual style variant"
         }
+      }
+    },
+    "redirects": {
+      "type": "object",
+      "description": "URL redirects. Keys are source paths, values are destination strings or objects with destination and status code.",
+      "additionalProperties": {
+        "oneOf": [
+          { "type": "string", "description": "Destination path (defaults to 301 redirect)" },
+          {
+            "type": "object",
+            "properties": {
+              "destination": { "type": "string", "description": "Destination path" },
+              "status": { "type": "number", "enum": [301, 302, 307, 308], "default": 301, "description": "HTTP status code" }
+            },
+            "required": ["destination"]
+          }
+        ]
       }
     },
     "assets": {

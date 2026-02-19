@@ -1,0 +1,81 @@
+---
+/**
+ * Multi-provider analytics component.
+ *
+ * Supported providers:
+ *   google-analytics  — uses Partytown for off-main-thread loading
+ *   posthog           — uses Partytown
+ *   clarity           — uses Partytown
+ *   plausible         — lightweight (<1KB), no Partytown needed
+ *   umami             — lightweight (~2KB), no Partytown needed
+ *   fathom            — lightweight (~2KB), no Partytown needed
+ */
+import type { DocsConfig } from '../types/config';
+
+interface Props {
+  config: DocsConfig;
+}
+
+const { config } = Astro.props;
+const analytics = config.integrations?.analytics;
+const provider = analytics?.provider;
+---
+
+{/* Google Analytics (Partytown) */}
+{provider === 'google-analytics' && analytics.measurementId && (
+  <>
+    <script type="text/partytown" src={`https://www.googletagmanager.com/gtag/js?id=${analytics.measurementId}`}></script>
+    <script type="text/partytown" define:vars={{ id: analytics.measurementId }}>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() { dataLayer.push(arguments); }
+      gtag('js', new Date());
+      gtag('config', id);
+    </script>
+  </>
+)}
+
+{/* PostHog (Partytown) */}
+{provider === 'posthog' && analytics.apiKey && (
+  <script type="text/partytown" define:vars={{ apiKey: analytics.apiKey, apiHost: analytics.apiHost || 'https://us.i.posthog.com' }}>
+    !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.async=!0,p.src=s.api_host+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once register_for_session unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group identify setPersonProperties setGroupProperties".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+    posthog.init(apiKey, { api_host: apiHost, person_profiles: 'identified_only' });
+  </script>
+)}
+
+{/* Microsoft Clarity (Partytown) */}
+{provider === 'clarity' && analytics.projectId && (
+  <script type="text/partytown" define:vars={{ projectId: analytics.projectId }}>
+    (function(c,l,a,r,i,t,y){
+      c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+      t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+      y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window,document,"clarity","script",projectId);
+  </script>
+)}
+
+{/* Plausible (lightweight, no Partytown) */}
+{provider === 'plausible' && analytics.domain && (
+  <script
+    defer
+    data-domain={analytics.domain}
+    src={analytics.scriptUrl || 'https://plausible.io/js/script.js'}
+  />
+)}
+
+{/* Umami (lightweight, no Partytown) */}
+{provider === 'umami' && analytics.websiteId && (
+  <script
+    defer
+    data-website-id={analytics.websiteId}
+    src={analytics.scriptUrl || 'https://cloud.umami.is/script.js'}
+  />
+)}
+
+{/* Fathom (lightweight, no Partytown) */}
+{provider === 'fathom' && analytics.siteId && (
+  <script
+    defer
+    data-site={analytics.siteId}
+    src={analytics.scriptUrl || 'https://cdn.usefathom.com/script.js'}
+  />
+)}

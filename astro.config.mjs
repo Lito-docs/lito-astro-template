@@ -11,6 +11,7 @@ import compress from '@playform/compress';
 import partytown from '@astrojs/partytown';
 import remarkGithubAlerts from './src/plugins/remark-github-alerts.js';
 import { remarkLastModified } from './src/plugins/remark-last-modified.js';
+import { remarkReadingTime } from './src/plugins/remark-reading-time.js';
 
 // https://astro.build/config
 export default defineConfig({
@@ -66,6 +67,9 @@ export default defineConfig({
         // Visual
         './src/components/mdx/Frame.astro',
         './src/components/mdx/Tooltip.astro',
+        './src/components/mdx/FileTree.astro',
+        './src/components/mdx/Image.astro',
+        './src/components/mdx/LinkCard.astro',
 
         // API Reference
         './src/components/mdx/APIEndpoint.astro',
@@ -108,7 +112,7 @@ export default defineConfig({
   ],
 
   markdown: {
-    remarkPlugins: [remarkGithubAlerts, remarkLastModified],
+    remarkPlugins: [remarkGithubAlerts, remarkLastModified, remarkReadingTime],
   },
 
   server: {

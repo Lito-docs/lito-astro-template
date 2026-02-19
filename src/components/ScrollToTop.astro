@@ -1,0 +1,75 @@
+---
+/**
+ * ScrollToTop - Floating button that appears after scrolling down
+ *
+ * Shows a chevron-up button fixed to the bottom-right corner.
+ * Appears after 500px of scroll depth, smooth-scrolls to top on click.
+ */
+---
+
+<button
+  id="scroll-to-top"
+  class="scroll-to-top"
+  aria-label="Scroll to top"
+  title="Scroll to top"
+>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="m18 15-6-6-6 6"/>
+  </svg>
+</button>
+
+<style>
+  @reference "../styles/global.css";
+
+  .scroll-to-top {
+    @apply fixed z-50 rounded-full p-2.5 cursor-pointer;
+    @apply border border-border bg-card text-muted-foreground;
+    @apply transition-all duration-200;
+    @apply backdrop-blur-sm;
+    bottom: 2rem;
+    right: 2rem;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .scroll-to-top.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .scroll-to-top:hover {
+    @apply text-foreground;
+    border-color: var(--primary-300);
+  }
+
+  :global(.dark) .scroll-to-top:hover {
+    border-color: var(--primary-400);
+  }
+</style>
+
+<script>
+  function initScrollToTop() {
+    const btn = document.getElementById('scroll-to-top');
+    if (!btn) return;
+
+    const threshold = 500;
+
+    function onScroll() {
+      if (window.scrollY > threshold) {
+        btn.classList.add('visible');
+      } else {
+        btn.classList.remove('visible');
+      }
+    }
+
+    btn.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+
+  initScrollToTop();
+  document.addEventListener('astro:page-load', initScrollToTop);
+</script>

@@ -143,6 +143,8 @@ export interface SEOConfig {
     articleType?: 'TechArticle' | 'Article';
     autoCanonical?: boolean;
     enableBreadcrumbs?: boolean;
+    /** Auto-generate OG images for pages without a custom ogImage (default: true) */
+    autoOgImages?: boolean;
 }
 
 export interface I18nConfig {
@@ -247,15 +249,71 @@ export interface LandingConfig {
     }>;
 }
 
+// ── Analytics provider types (discriminated union) ──
+
+export interface GoogleAnalyticsConfig {
+    provider: 'google-analytics';
+    measurementId: string;
+}
+
+export interface PostHogConfig {
+    provider: 'posthog';
+    apiKey: string;
+    apiHost?: string;
+}
+
+export interface ClarityConfig {
+    provider: 'clarity';
+    projectId: string;
+}
+
+export interface PlausibleConfig {
+    provider: 'plausible';
+    domain: string;
+    scriptUrl?: string;
+}
+
+export interface UmamiConfig {
+    provider: 'umami';
+    websiteId: string;
+    scriptUrl?: string;
+}
+
+export interface FathomConfig {
+    provider: 'fathom';
+    siteId: string;
+    scriptUrl?: string;
+}
+
+export type AnalyticsConfig =
+    | GoogleAnalyticsConfig
+    | PostHogConfig
+    | ClarityConfig
+    | PlausibleConfig
+    | UmamiConfig
+    | FathomConfig;
+
 export interface IntegrationsConfig {
-    analytics?: {
-        provider: string;
-        measurementId: string;
-    } | null;
+    analytics?: AnalyticsConfig | null;
     feedback?: FeedbackConfig;
     editPage?: EditPageConfig;
     lastUpdated?: LastUpdatedConfig;
     copyPage?: CopyPageConfig;
+    rss?: RSSConfig;
+    llmsTxt?: LlmsTxtConfig;
+}
+
+export interface LlmsTxtConfig {
+    enabled?: boolean;
+    title?: string;
+    description?: string;
+}
+
+export interface RSSConfig {
+    enabled?: boolean;
+    title?: string;
+    description?: string;
+    limit?: number;
 }
 
 export interface EditPageConfig {
