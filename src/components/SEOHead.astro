@@ -3,6 +3,7 @@ import { SEO } from 'astro-seo';
 import type { SEOFrontmatter, ArticleJsonLd, BreadcrumbJsonLd } from '../types/seo';
 import type { DocsConfig } from '../types/config';
 import { createLink } from '../utils/url';
+import Analytics from './Analytics.astro';
 
 interface Props {
   title: string;
@@ -30,10 +31,14 @@ const fullTitle = `${frontmatter.title || title} | ${config.metadata.name}`;
 const pageDescription = frontmatter.description || description || config.metadata.description;
 
 // Build OG Image URL (ensure absolute URL)
-const ogImage = frontmatter.ogImage || config.seo.ogImage;
+// Auto OG images: if no custom ogImage and autoOgImages enabled, use generated /og/{slug}.png
+const autoOgEnabled = config.seo?.autoOgImages !== false;
+const slugForOg = currentPath.replace(/^\//, '').replace(/\/$/, '') || 'index';
+const defaultOgImage = autoOgEnabled ? `/og/${slugForOg}.png` : '/og-image.png';
+const ogImage = frontmatter.ogImage || config.seo?.ogImage || defaultOgImage;
 const ogImageUrl = ogImage?.startsWith('http')
   ? ogImage
-  : siteUrl + createLink(ogImage || '/og-image.png');
+  : siteUrl + createLink(ogImage);
 
 // Determine OG type
 const ogType = frontmatter.ogType || 'article';
@@ -115,16 +120,20 @@ if (config.seo.enableJsonLd !== false && ogType === 'article') {
 // JSON-LD Breadcrumb structured data
 let breadcrumbJsonLd: BreadcrumbJsonLd | null = null;
 if (config.seo.enableBreadcrumbs !== false && breadcrumbs.length > 0) {
-  breadcrumbJsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: breadcrumbs.map((crumb, index) => ({
-      '@type': 'ListItem' as const,
-      position: index + 1,
-      name: crumb.name,
-      ...(crumb.href && index < breadcrumbs.length - 1 ? { item: siteUrl + crumb.href } : {}),
-    })),
-  };
+  // Filter to only breadcrumbs with href — Google requires 'item' on every entry
+  const linkedBreadcrumbs = breadcrumbs.filter(crumb => crumb.href);
+  if (linkedBreadcrumbs.length > 0) {
+    breadcrumbJsonLd = {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: linkedBreadcrumbs.map((crumb, index) => ({
+        '@type': 'ListItem' as const,
+        position: index + 1,
+        name: crumb.name,
+        item: siteUrl + crumb.href,
+      })),
+    };
+  }
 }
 
 // Additional meta tags for article
@@ -241,15 +250,4 @@ additionalMetaTags.push({
   <script is:inline type="application/ld+json" set:html={JSON.stringify(breadcrumbJsonLd)} />
 )}
 
-{/* Google Analytics */}
-{config.integrations?.analytics?.provider === 'google-analytics' && config.integrations.analytics.measurementId && (
-  <>
-    <script type="text/partytown" src={`https://www.googletagmanager.com/gtag/js?id=${config.integrations.analytics.measurementId}`}></script>
-    <script type="text/partytown" define:vars={{ id: config.integrations.analytics.measurementId }}>
-      window.dataLayer = window.dataLayer || [];
-      function gtag() { dataLayer.push(arguments); }
-      gtag('js', new Date());
-      gtag('config', id);
-    </script>
-  </>
-)}
+<Analytics config={config} />
