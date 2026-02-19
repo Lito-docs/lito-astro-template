@@ -43,6 +43,7 @@ export function getDefaultConfig(): DocsConfig {
                 text: '#1F2937',
             },
             fonts: {
+                heading: 'Syne',
                 body: 'Inter',
                 code: 'Fira Code',
             },

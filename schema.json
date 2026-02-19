@@ -38,6 +38,7 @@
         "fonts": {
           "type": "object",
           "properties": {
+            "heading": { "type": "string" },
             "body": { "type": "string" },
             "code": { "type": "string" }
           }

@@ -379,6 +379,7 @@ export interface DocsConfig extends CoreConfig, ThemeExtensions {
             text?: string;
         };
         fonts?: {
+            heading?: string;
             body?: string;
             code?: string;
         };

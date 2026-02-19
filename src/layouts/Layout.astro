@@ -37,6 +37,45 @@ const announcement = config.announcement;
 const showAnnouncement = announcement?.enabled && announcement?.text;
 const navTabs = config.navigation.navbar.tabs;
 const hasTabs = navTabs && navTabs.length > 0;
+
+// Font configuration
+const fonts = config.branding?.fonts;
+const headingFont = fonts?.heading || 'Syne';
+const bodyFont = fonts?.body || 'Inter';
+const codeFont = fonts?.code || 'Fira Code';
+
+// Build Google Fonts URL dynamically
+const fontFamilies: string[] = [];
+
+// Body font (Inter needs special opsz axis)
+if (bodyFont === 'Inter') {
+  fontFamilies.push('Inter:opsz,wght@14..32,400..700');
+} else {
+  fontFamilies.push(`${bodyFont.replace(/ /g, '+')}:wght@400;500;600;700`);
+}
+
+// Heading font (skip if same as body)
+if (headingFont !== bodyFont) {
+  fontFamilies.push(`${headingFont.replace(/ /g, '+')}:wght@600;700;800`);
+}
+
+// Code font
+fontFamilies.push(`${codeFont.replace(/ /g, '+')}:wght@400;500;600`);
+
+const googleFontsUrl = `https://fonts.googleapis.com/css2?${fontFamilies.map(f => `family=${f}`).join('&')}&display=swap`;
+
+// Build inline style overrides for non-default fonts
+const fontOverrides: string[] = [];
+if (bodyFont !== 'Inter') {
+  fontOverrides.push(`--font-sans: '${bodyFont}', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif !important;`);
+}
+if (headingFont !== 'Syne') {
+  fontOverrides.push(`--font-heading: '${headingFont}', '${bodyFont}', system-ui, sans-serif !important;`);
+}
+if (codeFont !== 'Fira Code') {
+  fontOverrides.push(`--font-mono: '${codeFont}', 'JetBrains Mono', 'SF Mono', Monaco, Consolas, monospace !important;`);
+}
+const fontOverrideStyle = fontOverrides.length > 0 ? `:root { ${fontOverrides.join(' ')} }` : '';
 ---
 
 <!doctype html>
@@ -58,7 +97,9 @@ const hasTabs = navTabs && navTabs.length > 0;
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link href={googleFontsUrl} rel="stylesheet" />
+
+    {fontOverrideStyle && <style set:html={fontOverrideStyle} />}
 
     <meta name="generator" content={Astro.generator} />
 
@@ -97,7 +138,7 @@ const hasTabs = navTabs && navTabs.length > 0;
       }
 
       code, pre {
-        font-family: 'Fira Code', 'Courier New', monospace !important;
+        font-family: var(--font-mono) !important;
       }
 
       /* Dynamic header height based on tabs */
