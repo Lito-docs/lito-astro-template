@@ -10,6 +10,9 @@ const config = await getConfigFile();
 const { navbar } = config.navigation;
 const social = navbar.social;
 const hasTabs = navbar.tabs && navbar.tabs.length > 0;
+const logoHeight = config.branding.logo.height || 28;
+const logoAlt = config.branding.logo.alt || config.metadata.name;
+const replacesTitle = config.branding.logo.replacesTitle !== false;
 ---
 
 <header class="topbar">
@@ -25,11 +28,12 @@ const hasTabs = navbar.tabs && navbar.tabs.length > 0;
 
     <!-- Logo -->
     <div class="flex items-center gap-4">
-      <a href={createLink(config.branding.logo.href)} class="logo-link">
+      <a href={createLink(config.branding.logo.href)} class="logo-link" style={`--logo-height: ${logoHeight}px`}>
         {config.branding.logo.light ? (
           <>
-            <img src={config.branding.logo.light} alt={config.metadata.name} class="logo-img logo-img-light" height="28" />
-            <img src={config.branding.logo.dark || config.branding.logo.light} alt={config.metadata.name} class="logo-img logo-img-dark" height="28" />
+            <img src={config.branding.logo.light} alt={logoAlt} class="logo-img logo-img-light" height={logoHeight} width="auto" loading="eager" decoding="sync" />
+            <img src={config.branding.logo.dark || config.branding.logo.light} alt={logoAlt} class="logo-img logo-img-dark" height={logoHeight} width="auto" loading="eager" decoding="sync" />
+            <h1 class="logo-text hidden sm:block">{config.metadata.name}</h1>
           </>
         ) : (
           <>
@@ -131,7 +135,7 @@ const hasTabs = navbar.tabs && navbar.tabs.length > 0;
   }
 
   .logo-img {
-    height: 28px;
+    height: var(--logo-height, 28px);
     width: auto;
   }
 

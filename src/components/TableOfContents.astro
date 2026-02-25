@@ -17,7 +17,12 @@ const tocEmpty = t['toc.empty'] || 'No headings';
     <span class="toc-title">{tocTitle}</span>
   </div>
   <nav class="toc-nav" id="toc-nav" data-toc-empty={tocEmpty}>
-    {/* TOC will be populated by client-side script */}
+    <!-- Placeholder skeleton to prevent layout shift -->
+    <ul class="toc-list toc-placeholder" aria-hidden="true">
+      <li class="toc-item toc-h2"><span class="toc-skeleton"></span></li>
+      <li class="toc-item toc-h2"><span class="toc-skeleton short"></span></li>
+      <li class="toc-item toc-h2"><span class="toc-skeleton"></span></li>
+    </ul>
   </nav>
 </aside>
 
@@ -78,6 +83,24 @@ const tocEmpty = t['toc.empty'] || 'No headings';
     font-size: 0.8rem;
     color: oklch(var(--muted-foreground));
     font-style: italic;
+  }
+
+  .toc-skeleton {
+    display: block;
+    height: 0.75rem;
+    width: 70%;
+    border-radius: 0.25rem;
+    background: var(--muted);
+    opacity: 0.4;
+    margin: 0.35rem 0.75rem;
+  }
+
+  .toc-skeleton.short {
+    width: 50%;
+  }
+
+  .toc-placeholder {
+    opacity: 0.5;
   }
 </style>
 

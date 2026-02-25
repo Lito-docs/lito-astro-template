@@ -136,7 +136,7 @@ const localizeHref = (href: string) => {
     <LanguageSwitcher />
   </div>
 
-  <nav class="px-2 mt-2 pb-6 space-y-6 scrollbar-hide" id="sidebar-nav-scroll">
+  <nav class="px-2.5 mt-3 pb-6 space-y-5 scrollbar-hide" id="sidebar-nav-scroll">
     {
       visibleSidebarItems.map((group: any) => (
         <SidebarGroup group={group} currentPath={currentPath} localizeHref={localizeHref} />
@@ -166,25 +166,87 @@ const localizeHref = (href: string) => {
   )}
 </aside>
 
-<script>
-  function initSidebarScroll() {
-    const nav = document.getElementById('sidebar-nav-scroll');
-    if (!nav) return;
-
-    const key = 'lito-sidebar-scroll';
-
-    // Restore scroll position
-    const saved = sessionStorage.getItem(key);
-    if (saved) {
-      nav.scrollTop = parseInt(saved, 10);
+<!-- Blocking script: restore sidebar state before paint to prevent flash -->
+<script is:inline>
+(function() {
+  // Restore collapsed/expanded state for sidebar groups
+  document.querySelectorAll('.sidebar-group').forEach(function(el) {
+    var groupId = el.getAttribute('data-group-id');
+    var hasActive = el.getAttribute('data-has-active') === 'true';
+    if (hasActive) return; // active groups always stay expanded
+    var saved = localStorage.getItem('sidebar-' + groupId);
+    if (saved === 'collapsed') {
+      el.classList.add('collapsed');
+      var h = el.querySelector('.sidebar-group-header');
+      if (h) h.setAttribute('aria-expanded', 'false');
     }
+  });
 
-    // Save scroll position on scroll
-    nav.addEventListener('scroll', () => {
-      sessionStorage.setItem(key, String(nav.scrollTop));
-    }, { passive: true });
+  // Restore collapsed/expanded state for nested subgroups
+  document.querySelectorAll('.sidebar-subgroup').forEach(function(el) {
+    var subgroupId = el.getAttribute('data-subgroup-id');
+    var hasActive = el.getAttribute('data-has-active') === 'true';
+    if (hasActive) return;
+    var saved = localStorage.getItem('sidebar-sub-' + subgroupId);
+    // Default to collapsed if no active item and no saved state
+    var shouldCollapse = saved ? saved === 'collapsed' : true;
+    if (shouldCollapse) {
+      el.classList.add('collapsed');
+      var h = el.querySelector('.sidebar-subgroup-header');
+      if (h) h.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  // Restore scroll position
+  var nav = document.getElementById('sidebar-nav-scroll');
+  var scrollPos = sessionStorage.getItem('lito-sidebar-scroll');
+  if (nav && scrollPos) {
+    nav.scrollTop = parseInt(scrollPos, 10);
+  }
+})();
+</script>
+
+<script>
+  // Attach click handlers and scroll save (deferred is fine for interactivity)
+  function initSidebarInteractivity() {
+    // Group toggle handlers
+    document.querySelectorAll('.sidebar-group').forEach((el) => {
+      const group = el as HTMLElement;
+      const groupId = group.dataset.groupId;
+      const header = group.querySelector('.sidebar-group-header') as HTMLButtonElement;
+      if (!header) return;
+
+      header.addEventListener('click', () => {
+        const isNowCollapsed = group.classList.toggle('collapsed');
+        header.setAttribute('aria-expanded', String(!isNowCollapsed));
+        localStorage.setItem(`sidebar-${groupId}`, isNowCollapsed ? 'collapsed' : 'expanded');
+      });
+    });
+
+    // Subgroup toggle handlers
+    document.querySelectorAll('.sidebar-subgroup').forEach((el) => {
+      const subgroup = el as HTMLElement;
+      const subgroupId = subgroup.dataset.subgroupId;
+      const header = subgroup.querySelector('.sidebar-subgroup-header') as HTMLButtonElement;
+      if (!header) return;
+
+      header.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isNowCollapsed = subgroup.classList.toggle('collapsed');
+        header.setAttribute('aria-expanded', String(!isNowCollapsed));
+        localStorage.setItem(`sidebar-sub-${subgroupId}`, isNowCollapsed ? 'collapsed' : 'expanded');
+      });
+    });
+
+    // Save scroll position
+    const nav = document.getElementById('sidebar-nav-scroll');
+    if (nav) {
+      nav.addEventListener('scroll', () => {
+        sessionStorage.setItem('lito-sidebar-scroll', String(nav.scrollTop));
+      }, { passive: true });
+    }
   }
 
-  initSidebarScroll();
-  document.addEventListener('astro:page-load', initSidebarScroll);
+  initSidebarInteractivity();
+  document.addEventListener('astro:page-load', initSidebarInteractivity);
 </script>

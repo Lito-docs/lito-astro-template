@@ -229,8 +229,8 @@ h6 {
 }
 
 .sidebar-anchor {
-  @apply flex items-center justify-between px-3 py-2 rounded-md;
-  @apply transition-colors duration-150;
+  @apply flex items-center justify-between px-3 py-2 rounded-lg;
+  @apply transition-all duration-150;
   color: var(--sidebar-foreground);
   font-size: 0.8125rem;
   text-decoration: none;
@@ -277,8 +277,8 @@ h6 {
 }
 
 .sidebar-social-link {
-  @apply flex items-center justify-center w-8 h-8 rounded-md;
-  @apply transition-colors duration-150;
+  @apply flex items-center justify-center w-8 h-8 rounded-lg;
+  @apply transition-all duration-150;
   color: var(--muted-foreground);
 }
 
@@ -289,21 +289,38 @@ h6 {
 
 /* Sidebar navigation link */
 .sidebar-link {
-  @apply flex items-center gap-2 px-3 py-1.5 rounded-sm;
-  @apply transition-colors duration-150;
+  @apply flex items-center gap-2 py-1.5 rounded-lg;
+  @apply transition-all duration-150;
   color: var(--sidebar-foreground);
-  margin: 1px 0.5rem;
+  padding-left: 0.625rem;
+  padding-right: 0.625rem;
+  margin: 1px 0.375rem;
   font-size: 0.8125rem;
 }
 
 .sidebar-link:hover {
   color: var(--foreground);
+  background: var(--accent);
 }
 
 /* Active sidebar link */
 .sidebar-link-active {
   @apply font-medium;
-  color: var(--foreground);
+  color: var(--primary-700);
+  background: var(--primary-50);
+}
+
+.sidebar-link-active:hover {
+  background: var(--primary-100);
+}
+
+:global(.dark) .sidebar-link-active {
+  color: var(--primary-300);
+  background: oklch(from var(--primary-500) l c h / 0.1);
+}
+
+:global(.dark) .sidebar-link-active:hover {
+  background: oklch(from var(--primary-500) l c h / 0.15);
 }
 
 /* Search input (sidebar/page search, not the modal) */
@@ -584,14 +601,16 @@ h6 {
 
 /* Sidebar group header */
 .sidebar-group-header {
-  @apply px-4 py-2 text-xs font-medium uppercase;
+  @apply px-3 py-1.5 text-[11px] font-semibold uppercase;
   color: var(--muted-foreground);
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   transition: color 150ms ease;
+  opacity: 0.7;
 }
 
 .sidebar-group-header:hover {
   color: var(--foreground);
+  opacity: 1;
 }
 
 /* Table of Contents - Fixed right sidebar */
@@ -713,5 +732,6 @@ lite-youtube {
 
   .sidebar-group-header {
     text-align: right;
+    flex-direction: row-reverse;
   }
 }

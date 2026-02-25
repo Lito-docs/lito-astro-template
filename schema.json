@@ -21,7 +21,10 @@
           "properties": {
             "light": { "type": "string" },
             "dark": { "type": "string" },
-            "href": { "type": "string" }
+            "href": { "type": "string" },
+            "height": { "type": "number", "description": "Logo height in pixels" },
+            "alt": { "type": "string", "description": "Alt text for the logo image (defaults to metadata.name)" },
+            "replacesTitle": { "type": "boolean", "default": true, "description": "When true, logo replaces site title text. When false, both are shown." }
           }
         },
         "favicon": { "type": "string" },
@@ -50,6 +53,7 @@
       "properties": {
         "mode": { "type": "string", "enum": ["light", "dark", "auto"] },
         "defaultDark": { "type": "boolean" },
+        "hideToggle": { "type": "boolean", "default": false, "description": "Hide the theme toggle button" },
         "primaryColor": { "type": "string" },
         "accentColor": { "type": "string" }
       }
@@ -379,6 +383,19 @@
             "enabled": { "type": "boolean", "default": false, "description": "Enable llms.txt generation (requires site URL in metadata.url)" },
             "title": { "type": "string", "description": "Title for the llms.txt file (defaults to site name)" },
             "description": { "type": "string", "description": "Description for the llms.txt file (defaults to site description)" }
+          }
+        },
+        "headTags": {
+          "type": "array",
+          "description": "Custom HTML tags to inject into <head>",
+          "items": {
+            "type": "object",
+            "properties": {
+              "tag": { "type": "string", "enum": ["meta", "link", "script", "style"] },
+              "attributes": { "type": "object", "additionalProperties": { "type": "string" } },
+              "content": { "type": "string" }
+            },
+            "required": ["tag"]
           }
         },
         "copyPage": {

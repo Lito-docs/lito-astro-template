@@ -43,6 +43,9 @@ export interface LogoConfig {
     light?: string;
     dark?: string;
     href?: string;
+    height?: number;
+    alt?: string;
+    replacesTitle?: boolean;
 }
 
 export interface SidebarAnchor {
@@ -226,6 +229,7 @@ export interface FooterLink {
 export interface ThemeConfig {
     mode?: 'auto' | 'light' | 'dark';
     defaultDark?: boolean;
+    hideToggle?: boolean;
     primaryColor?: string;
     accentColor?: string;
 }
@@ -293,6 +297,12 @@ export type AnalyticsConfig =
     | UmamiConfig
     | FathomConfig;
 
+export interface HeadTag {
+    tag: 'meta' | 'link' | 'script' | 'style';
+    attributes?: Record<string, string>;
+    content?: string;
+}
+
 export interface IntegrationsConfig {
     analytics?: AnalyticsConfig | null;
     feedback?: FeedbackConfig;
@@ -301,6 +311,7 @@ export interface IntegrationsConfig {
     copyPage?: CopyPageConfig;
     rss?: RSSConfig;
     llmsTxt?: LlmsTxtConfig;
+    headTags?: HeadTag[];
 }
 
 export interface LlmsTxtConfig {

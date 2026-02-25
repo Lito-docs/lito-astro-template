@@ -33,6 +33,7 @@ export function getDefaultConfig(): DocsConfig {
                 light: '/logo-light.svg',
                 dark: '/logo-dark.svg',
                 href: '/',
+                replacesTitle: true,
             },
             favicon: '/favicon.svg',
             colors: {
@@ -43,7 +44,7 @@ export function getDefaultConfig(): DocsConfig {
                 text: '#1F2937',
             },
             fonts: {
-                heading: 'Syne',
+                heading: 'Inter',
                 body: 'Inter',
                 code: 'Fira Code',
             },
@@ -51,6 +52,7 @@ export function getDefaultConfig(): DocsConfig {
         theme: {
             mode: 'auto',
             defaultDark: false,
+            hideToggle: false,
             primaryColor: '#3B82F6',
             accentColor: '#10B981',
         },

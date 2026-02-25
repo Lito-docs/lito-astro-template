@@ -4,21 +4,28 @@
  * Persists preference to localStorage
  */
 import Icon from './Icon.astro';
+import { getConfigFile } from '../utils/config';
+
+const config = await getConfigFile();
+const themeMode = config.theme?.mode || 'auto';
+const shouldHide = config.theme?.hideToggle || themeMode === 'light' || themeMode === 'dark';
 ---
 
-<button
-  id="theme-toggle"
-  class="theme-toggle"
-  aria-label="Toggle theme"
-  title="Toggle theme"
->
-  <span class="sun-icon">
-    <Icon name="lucide:sun" size={18} />
-  </span>
-  <span class="moon-icon">
-    <Icon name="lucide:moon" size={18} />
-  </span>
-</button>
+{!shouldHide && (
+  <button
+    id="theme-toggle"
+    class="theme-toggle"
+    aria-label="Toggle theme"
+    title="Toggle theme"
+  >
+    <span class="sun-icon">
+      <Icon name="lucide:sun" size={18} />
+    </span>
+    <span class="moon-icon">
+      <Icon name="lucide:moon" size={18} />
+    </span>
+  </button>
+)}
 
 <style>
   .theme-toggle {
@@ -27,24 +34,24 @@ import Icon from './Icon.astro';
     color: var(--muted-foreground);
     transition: color 0.2s, background-color 0.2s;
   }
-  
+
   .theme-toggle:hover {
     color: var(--foreground);
     background-color: var(--accent);
   }
-  
+
   .sun-icon {
     display: none;
   }
-  
+
   .moon-icon {
     display: block;
   }
-  
+
   :global(html.light) .sun-icon {
     display: block;
   }
-  
+
   :global(html.light) .moon-icon {
     display: none;
   }
@@ -52,28 +59,13 @@ import Icon from './Icon.astro';
 
 <script>
   const toggle = document.getElementById('theme-toggle');
-  const html = document.documentElement;
-  
-  // Check for saved preference or system preference
-  const savedTheme = localStorage.getItem('theme');
-  const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  
-  if (savedTheme === 'light' || (!savedTheme && !systemPrefersDark)) {
-    html.classList.remove('dark');
-    html.classList.add('light');
+  if (toggle) {
+    toggle.addEventListener('click', () => {
+      const html = document.documentElement;
+      const isDark = html.classList.contains('dark');
+      html.classList.remove('light', 'dark');
+      html.classList.add(isDark ? 'light' : 'dark');
+      localStorage.setItem('theme', isDark ? 'light' : 'dark');
+    });
   }
-  
-  toggle?.addEventListener('click', () => {
-    const isDark = html.classList.contains('dark');
-    
-    if (isDark) {
-      html.classList.remove('dark');
-      html.classList.add('light');
-      localStorage.setItem('theme', 'light');
-    } else {
-      html.classList.remove('light');
-      html.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    }
-  });
 </script>

@@ -40,7 +40,7 @@ const hasBottomLinks = footer?.bottomLinks && footer.bottomLinks.length > 0;
 const footerLogo = footer?.logo ?? (config.branding?.logo ? {
   src: config.branding.logo.light || config.branding.logo.dark,
   href: config.branding.logo.href || '/',
-  alt: config.metadata.name,
+  alt: config.branding.logo.alt || config.metadata.name,
   height: 32
 } : null);
 ---

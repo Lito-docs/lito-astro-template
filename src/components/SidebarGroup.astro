@@ -136,7 +136,7 @@ const methodColors: Record<string, string> = {
 
   .sidebar-group-header {
     @apply w-full flex items-center justify-between cursor-pointer;
-    @apply py-2 px-3 rounded-sm;
+    @apply py-1.5 px-3 rounded-md;
     @apply transition-colors duration-150;
     color: var(--muted-foreground);
   }
@@ -150,19 +150,27 @@ const methodColors: Record<string, string> = {
   }
 
   .sidebar-group-title h3 {
-    @apply m-0 text-xs font-medium uppercase tracking-wider;
+    @apply m-0 text-[11px] font-semibold uppercase tracking-widest;
+    color: var(--muted-foreground);
+    opacity: 0.7;
+  }
+
+  .sidebar-group-header:hover .sidebar-group-title h3 {
+    opacity: 1;
   }
 
   .sidebar-chevron {
     @apply transition-transform duration-200;
-    opacity: 0.3;
+    opacity: 0.25;
+  }
+
+  .sidebar-group-header:hover .sidebar-chevron {
+    opacity: 0.5;
   }
 
   .sidebar-group-items {
-    @apply list-none m-0 p-0 space-y-0.5 overflow-hidden;
-    margin-left: 0.75rem;
-    padding-left: 0.75rem;
-    border-left: 1px solid var(--border);
+    @apply list-none m-0 p-0 overflow-hidden;
+    padding-left: 0.25rem;
   }
 
   .sidebar-group.collapsed .sidebar-group-items {
@@ -170,7 +178,7 @@ const methodColors: Record<string, string> = {
   }
 
   .sidebar-group:not(.collapsed) .sidebar-group-items {
-    margin-top: 0.25rem;
+    margin-top: 0.125rem;
   }
 
   .sidebar-group.collapsed .sidebar-chevron {
@@ -179,12 +187,12 @@ const methodColors: Record<string, string> = {
 
   /* Nested subgroups */
   .sidebar-subgroup {
-    @apply mt-1;
+    @apply mt-0.5;
   }
 
   .sidebar-subgroup-header {
     @apply w-full flex items-center justify-between cursor-pointer;
-    @apply py-1.5 px-2 rounded-md text-sm;
+    @apply py-1.5 px-2.5 rounded-md text-sm;
     @apply transition-colors duration-150;
     color: var(--muted-foreground);
   }
@@ -195,12 +203,17 @@ const methodColors: Record<string, string> = {
   }
 
   .subgroup-label {
-    @apply font-medium text-xs uppercase tracking-wide;
+    @apply font-medium text-[11px] uppercase tracking-wide;
+    opacity: 0.7;
+  }
+
+  .sidebar-subgroup-header:hover .subgroup-label {
+    opacity: 1;
   }
 
   .subgroup-chevron {
     @apply transition-transform duration-200;
-    opacity: 0.5;
+    opacity: 0.35;
   }
 
   .sidebar-subgroup:not(.collapsed) .subgroup-chevron {
@@ -208,10 +221,8 @@ const methodColors: Record<string, string> = {
   }
 
   .sidebar-subgroup-items {
-    @apply list-none m-0 p-0 space-y-0.5 overflow-hidden;
-    margin-left: 0.5rem;
+    @apply list-none m-0 p-0 overflow-hidden;
     padding-left: 0.5rem;
-    border-left: 1px solid var(--border);
   }
 
   .sidebar-subgroup.collapsed .sidebar-subgroup-items {
@@ -219,7 +230,7 @@ const methodColors: Record<string, string> = {
   }
 
   .sidebar-subgroup:not(.collapsed) .sidebar-subgroup-items {
-    margin-top: 0.25rem;
+    margin-top: 0.125rem;
   }
 
   /* Method badges */
@@ -270,7 +281,7 @@ const methodColors: Record<string, string> = {
 
   .sidebar-item-icon {
     @apply flex-shrink-0;
-    opacity: 0.6;
+    opacity: 0.5;
   }
 
   .sidebar-link:hover .sidebar-item-icon,
@@ -284,70 +295,4 @@ const methodColors: Record<string, string> = {
   }
 </style>
 
-<script>
-  // Initialize collapsible sidebar groups
-  function initSidebarGroups() {
-    // Main groups
-    document.querySelectorAll('.sidebar-group').forEach((el) => {
-      const group = el as HTMLElement;
-      const groupId = group.dataset.groupId;
-      const hasActive = group.dataset.hasActive === 'true';
-      const storageKey = `sidebar-${groupId}`;
-      const header = group.querySelector('.sidebar-group-header') as HTMLButtonElement;
-
-      // Check localStorage for saved state, default to expanded if has active item
-      const savedState = localStorage.getItem(storageKey);
-      const isCollapsed = savedState ? savedState === 'collapsed' : false;
-
-      // If there's an active item, always expand
-      if (hasActive) {
-        group.classList.remove('collapsed');
-        header?.setAttribute('aria-expanded', 'true');
-      } else if (isCollapsed) {
-        group.classList.add('collapsed');
-        header?.setAttribute('aria-expanded', 'false');
-      }
-
-      // Toggle on click
-      header?.addEventListener('click', () => {
-        const isNowCollapsed = group.classList.toggle('collapsed');
-        header.setAttribute('aria-expanded', String(!isNowCollapsed));
-        localStorage.setItem(storageKey, isNowCollapsed ? 'collapsed' : 'expanded');
-      });
-    });
-
-    // Nested subgroups
-    document.querySelectorAll('.sidebar-subgroup').forEach((el) => {
-      const subgroup = el as HTMLElement;
-      const subgroupId = subgroup.dataset.subgroupId;
-      const hasActive = subgroup.dataset.hasActive === 'true';
-      const storageKey = `sidebar-sub-${subgroupId}`;
-      const header = subgroup.querySelector('.sidebar-subgroup-header') as HTMLButtonElement;
-
-      // Check localStorage for saved state
-      const savedState = localStorage.getItem(storageKey);
-      const isCollapsed = savedState ? savedState === 'collapsed' : !hasActive;
-
-      // If there's an active item, always expand
-      if (hasActive) {
-        subgroup.classList.remove('collapsed');
-        header?.setAttribute('aria-expanded', 'true');
-      } else if (isCollapsed) {
-        subgroup.classList.add('collapsed');
-        header?.setAttribute('aria-expanded', 'false');
-      }
-
-      // Toggle on click
-      header?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const isNowCollapsed = subgroup.classList.toggle('collapsed');
-        header.setAttribute('aria-expanded', String(!isNowCollapsed));
-        localStorage.setItem(storageKey, isNowCollapsed ? 'collapsed' : 'expanded');
-      });
-    });
-  }
-
-  // Run on page load and after View Transitions
-  initSidebarGroups();
-  document.addEventListener('astro:page-load', initSidebarGroups);
-</script>
+<!-- State restoration and click handlers are in Sidebar.astro -->

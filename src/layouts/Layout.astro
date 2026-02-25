@@ -38,9 +38,17 @@ const showAnnouncement = announcement?.enabled && announcement?.text;
 const navTabs = config.navigation.navbar.tabs;
 const hasTabs = navTabs && navTabs.length > 0;
 
+// Theme configuration
+const themeMode = config.theme?.mode || 'auto';
+const defaultDark = config.theme?.defaultDark ?? true;
+const initialClass = themeMode === 'light' ? 'light'
+                   : themeMode === 'dark' ? 'dark'
+                   : defaultDark ? 'dark' : 'light';
+const headTags = config.integrations?.headTags || [];
+
 // Font configuration
 const fonts = config.branding?.fonts;
-const headingFont = fonts?.heading || 'Syne';
+const headingFont = fonts?.heading || 'Inter';
 const bodyFont = fonts?.body || 'Inter';
 const codeFont = fonts?.code || 'Fira Code';
 
@@ -69,7 +77,7 @@ const fontOverrides: string[] = [];
 if (bodyFont !== 'Inter') {
   fontOverrides.push(`--font-sans: '${bodyFont}', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif !important;`);
 }
-if (headingFont !== 'Syne') {
+if (headingFont !== 'Inter') {
   fontOverrides.push(`--font-heading: '${headingFont}', '${bodyFont}', system-ui, sans-serif !important;`);
 }
 if (codeFont !== 'Fira Code') {
@@ -79,7 +87,7 @@ const fontOverrideStyle = fontOverrides.length > 0 ? `:root { ${fontOverrides.jo
 ---
 
 <!doctype html>
-<html lang={currentLocale} dir={isRtl ? 'rtl' : 'ltr'} class="dark" data-has-tabs={hasTabs ? 'true' : undefined}>
+<html lang={currentLocale} dir={isRtl ? 'rtl' : 'ltr'} class={initialClass} data-theme-mode={themeMode} data-has-tabs={hasTabs ? 'true' : undefined}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -103,14 +111,31 @@ const fontOverrideStyle = fontOverrides.length > 0 ? `:root { ${fontOverrides.jo
 
     <meta name="generator" content={Astro.generator} />
 
+    {headTags.map((ht) => {
+      if (ht.tag === 'meta') return <meta {...ht.attributes} />;
+      if (ht.tag === 'link') return <link {...ht.attributes} />;
+      if (ht.tag === 'script') return <script is:inline {...ht.attributes} set:html={ht.content || ''} />;
+      if (ht.tag === 'style') return <style set:html={ht.content || ''} />;
+      return null;
+    })}
+
     <!-- Theme initialization -->
     <script is:inline>
-      const savedTheme = localStorage.getItem('theme');
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (savedTheme === 'light' || (!savedTheme && !prefersDark)) {
-        document.documentElement.classList.remove('dark');
-        document.documentElement.classList.add('light');
-      }
+      (function() {
+        var html = document.documentElement;
+        var mode = html.getAttribute('data-theme-mode') || 'auto';
+        if (mode === 'light') { html.className = html.className.replace('dark','').replace('light','') + ' light'; return; }
+        if (mode === 'dark') { html.className = html.className.replace('light','').replace('dark','') + ' dark'; return; }
+        var saved = localStorage.getItem('theme');
+        if (saved === 'light' || saved === 'dark') {
+          html.classList.remove('light', 'dark');
+          html.classList.add(saved);
+          return;
+        }
+        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        html.classList.remove('light', 'dark');
+        html.classList.add(prefersDark ? 'dark' : 'light');
+      })();
     </script>
   </head>
   <body class="bg-background text-foreground font-sans antialiased">
