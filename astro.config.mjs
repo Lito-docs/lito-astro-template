@@ -1,12 +1,13 @@
 import { defineConfig } from 'astro/config';
 import mdx from '@astrojs/mdx';
+import sitemap from '@astrojs/sitemap';
 import AutoImport from 'astro-auto-import';
 import tailwindcss from '@tailwindcss/vite';
 import embeds from 'astro-embed/integration';
 import expressiveCode from 'astro-expressive-code';
 import mermaid from 'astro-mermaid';
 import icon from 'astro-icon';
-import sitemap from 'astro-sitemap';
+import robotsTxt from 'astro-robots-txt';
 import compress from '@playform/compress';
 import partytown from '@astrojs/partytown';
 import remarkGithubAlerts from './src/plugins/remark-github-alerts.js';
@@ -17,6 +18,7 @@ import { remarkReadingTime } from './src/plugins/remark-reading-time.js';
 export default defineConfig({
   integrations: [
     sitemap(),
+    robotsTxt(),
     compress(),
     partytown({
       config: {
